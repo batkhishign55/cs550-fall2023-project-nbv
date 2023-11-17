@@ -1,5 +1,7 @@
 import readline
 
+from wallet import Wallet
+
 
 app_info = "DSC: DataSys Coin Blockchain v1.0"
 
@@ -32,8 +34,8 @@ def startApp():
             print(app_info+"\nHelp menu for Wallet, supported commands:\n./dsc wallet help\n./dsc wallet create\n./dsc wallet key\n./dsc wallet balance\n./dsc wallet send <amount> <address>\n./dsc wallet transaction <ID>\n")
             pass
         elif inp == "./dsc wallet create":
-            print("this is wallet create")
-            pass
+            wallet = Wallet()
+            wallet.create_wallet()
         elif inp == "./dsc wallet key":
             print("this is wallet key")
             pass
