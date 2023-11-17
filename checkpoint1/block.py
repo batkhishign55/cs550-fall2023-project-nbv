@@ -2,9 +2,10 @@ import struct
 import time
 
 class BlockHeader:
-    def __init__(self, version, prev_block_hash, timestamp, difficulty_target, nonce):
+    def __init__(self, version, prev_block_hash, block_id, timestamp, difficulty_target, nonce):
         self.version = version
         self.prev_block_hash = prev_block_hash
+        self.block_id = block_id
         self.timestamp = timestamp
         self.difficulty_target = difficulty_target
         self.nonce = nonce
@@ -12,9 +13,10 @@ class BlockHeader:
     def pack(self):
         # Pack the block header data into bytes
         packed_header = struct.pack(
-            'I32sQIQ',
+            'H32sIQHQ',
             self.version,
             self.prev_block_hash.encode('utf-8'),
+            self.block_id,
             self.timestamp,
             self.difficulty_target,
             self.nonce
@@ -24,22 +26,24 @@ class BlockHeader:
     @classmethod
     def unpack(cls, packed_header):
         # Unpack the bytes into a block header object
-        unpacked_data = struct.unpack('I32sQIQ', packed_header)
+        unpacked_data = struct.unpack('H32sIQHQ', packed_header)
         return cls(
             version=unpacked_data[0],
             prev_block_hash=unpacked_data[1].decode('utf-8').rstrip('\x00'),
-            timestamp=unpacked_data[2],
-            difficulty_target=unpacked_data[3],
-            nonce=unpacked_data[4]
+            block_id=unpacked_data[2],
+            timestamp=unpacked_data[3],
+            difficulty_target=unpacked_data[4],
+            nonce=unpacked_data[5]
         )
 
 class Block:
-    def __init__(self, version, prev_block_hash, difficulty_target, transactions):
+    def __init__(self, version, prev_block_hash, block_id, timestamp, difficulty_target, nonce, transactions):
         self.version = version
         self.prev_block_hash = prev_block_hash
-        self.timestamp = int(time.time())  # Current timestamp
+        self.block_id = block_id
+        self.timestamp = timestamp
         self.difficulty_target = difficulty_target
-        self.nonce = 0
+        self.nonce = nonce
         self.transactions = transactions
 
     def pack(self):
@@ -47,6 +51,7 @@ class Block:
         header = BlockHeader(
             version=self.version,
             prev_block_hash=self.prev_block_hash,
+            block_id=self.block_id,
             timestamp=self.timestamp,
             difficulty_target=self.difficulty_target,
             nonce=self.nonce
@@ -84,8 +89,9 @@ class Block:
         return cls(
             version=header.version,
             prev_block_hash=header.prev_block_hash,
+            block_id=header.block_id,
             timestamp=header.timestamp,
             difficulty_target=header.difficulty_target,
+            nonce=header.nonce,
             transactions=transactions
         )
-
