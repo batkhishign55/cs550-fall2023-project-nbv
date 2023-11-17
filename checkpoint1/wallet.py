@@ -10,16 +10,15 @@ from cryptography.hazmat.primitives import serialization
 import os
 import datetime
 import sys
-import random 
+import random
+
 
 class Wallet:
     def __init__(self):
         self.public_key = None
         self.private_key = None
         self.balances = {}
-        self.load_wallet()
-        self.public_key, self.private_key = self.create_wallet()
-        
+
     def get_current_date_time(self):
         return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S.%f")
 
@@ -39,6 +38,7 @@ class Wallet:
                 self.private_key = config['Keys']['private_key']
 
     def create_wallet(self):
+        self.load_wallet()
         public_key = None
         private_key = None
         if not os.path.exists('dsc-config.yaml') and not os.path.exists('dsc-key.yaml'):
@@ -73,7 +73,7 @@ class Wallet:
             )
             private_key = private_key_bytes.decode('utf-8')
             public_key = public_key.decode('utf-8')
-            
+
             config = configparser.ConfigParser()
             config['Keys'] = {
                 'public_key': public_key,
@@ -85,26 +85,26 @@ class Wallet:
 
             with open('dsc-key.yaml', 'w') as keyfile:
                 keyfile.write(private_key)
-            
+
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Public Address: {public_key}\n{self.get_current_date_time()} DSC Private Address: {private_key}\n{self.get_current_date_time()} Saved public key to dsc-config.yaml and private key to dsc-key.yaml in local folder")
         else:
-            
+
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Wallet already exists at dsc-key.yaml, wallet create aborted")
-            
+
         return public_key, private_key
-    
- 
+
     def print_keys(self):
         self.load_wallet()
         if hasattr(self, 'public_key'):
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Reading dsc-config.yaml and dsc-key.yaml...\n{self.get_current_date_time()} DSC Public Address: {self.public_key}\n{self.get_current_date_time()} DSC Private Address: {self.private_key}")
-        
+
         else:
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Error in finding key information, ensure that dsc-config.yaml and dsc-key.yaml exist and that they contain the correct information. You may need to run “./dsc wallet create”")
 
     def get_balance(self):
         if self.public_key in self.balances:
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance: {self.balances[self.public_key]} coins at block x")
+            print(
+                f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance: {self.balances[self.public_key]} coins at block x")
             return self.balances[self.public_key]
         else:
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance:0.0 coins at block x")
@@ -113,7 +113,8 @@ class Wallet:
     def send_coins(self, value, recipient):
         self.load_wallet()
         sender_public_key = self.public_key
-        print(self.balances, self.public_key, self.balances.get(sender_public_key))
+        print(self.balances, self.public_key,
+              self.balances.get(sender_public_key))
         if self.balances.get(sender_public_key, 0.0) >= value:
             print("send_coins")
             self.balances[sender_public_key] -= value
@@ -126,13 +127,17 @@ class Wallet:
             transaction_id = self.generate_transaction_id()
 
             print(f"{self.get_current_date_time()} DSC v1.0")
-            print(f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
-            print(f"{self.get_current_date_time()} Created transaction {transaction_id}, Sending {value} coins to {recipient}")
-            print(f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
+            print(
+                f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
+            print(
+                f"{self.get_current_date_time()} Created transaction {transaction_id}, Sending {value} coins to {recipient}")
+            print(
+                f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
 
             status = "submitted"
             for _ in range(5):  # Simulate status check for 5 seconds
-                print(f"{self.get_current_date_time()} Transaction {transaction_id} status [{status}]")
+                print(
+                    f"{self.get_current_date_time()} Transaction {transaction_id} status [{status}]")
                 time.sleep(1)  # Simulate waiting 1 second
 
                 if status == "submitted":
@@ -141,8 +146,10 @@ class Wallet:
                     status = "confirmed"
                     break  # Transaction confirmed, break out of loop
 
-            print(f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed], block X")
-            print(f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
+            print(
+                f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed], block X")
+            print(
+                f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
@@ -151,20 +158,23 @@ class Wallet:
     def check_transaction_status(self, transaction_id):
         # Simulating contacting the pool server
         pool_response = self.contact_pool_server(transaction_id)
-        
+
         if pool_response == "unknown":
             # Simulate contacting the blockchain server for transaction status
             blockchain_response = self.query_blockchain(transaction_id)
-            
+
             if blockchain_response == "confirmed":
                 print(f"{self.get_current_date_time()} DSC v1.0")
-                print(f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed]")
+                print(
+                    f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed]")
             else:
                 print(f"{self.get_current_date_time()} DSC v1.0")
-                print(f"{self.get_current_date_time()} Transaction {transaction_id} status [unknown]")
+                print(
+                    f"{self.get_current_date_time()} Transaction {transaction_id} status [unknown]")
         else:
             print(f"{self.get_current_date_time()} DSC v1.0")
-            print(f"{self.get_current_date_time()} Transaction {transaction_id} status [{pool_response}]")
+            print(
+                f"{self.get_current_date_time()} Transaction {transaction_id} status [{pool_response}]")
 
     def contact_pool_server(self, transaction_id):
         # Simulate contacting the pool server
@@ -175,10 +185,10 @@ class Wallet:
         # Simulate contacting the blockchain server for transaction status
         # Return a random status: confirmed or unknown
         return random.choice(["confirmed", "unknown"])
-    
+
     def transactions(self):
         # TODO
-        # Simulating transactions data (Replace this with actual data retrieval) 
+        # Simulating transactions data (Replace this with actual data retrieval)
         transactions_data = [
             {
                 "id": "41VYNQ3dy1dZ4vKrC1vkUT4TgjcDyaEa72yVsik2SnGZ",
@@ -188,7 +198,7 @@ class Wallet:
                 "source": "8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U",
                 "destination": "HtBTNpCt5fmPrvESqVp1UFsiX5wnMCtmgt7Cxi85MFiF"
             },
-            
+
         ]
 
         print(f"{self.get_current_date_time()} DSC v1.0")
@@ -197,33 +207,3 @@ class Wallet:
             print(f"{self.get_current_date_time()} Transaction #{idx}: id={txn['id']}, status={txn['status']}, "
                   f"timestamp=\"{txn['timestamp']}\", coin={txn['coin']}, "
                   f"source={txn['source']}, destination={txn['destination']}")
-
-
-def main():
-    wallet = Wallet()
-    if len(sys.argv) < 3:
-        print("Invalid command. Use './dsc wallet help' for help.")
-        return
-
-    if sys.argv[2] == "help":
-        print("DSC: DataSys Coin Blockchain v1.0\nHelp menu for Wallet, supported commands:\n./dsc wallet help\n./dsc wallet create\n./dsc wallet key\n./dsc wallet balance\n./dsc wallet send <amount> <address>\n./dsc wallet transaction <ID>")
-    elif sys.argv[2] == "create":
-        wallet.create_wallet()
-    elif sys.argv[2] == "key":
-        wallet.print_keys()
-    elif sys.argv[2] == "balance":
-        print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance: {wallet.get_balance()} coins at block x")
-    elif sys.argv[2] == "send" and len(sys.argv) == 5:
-        amount = float(sys.argv[3])
-        address = sys.argv[4]
-        wallet.send_coins(amount, address)
-    elif sys.argv[2] == "transaction" and len(sys.argv) == 4:
-        transaction_id = sys.argv[3]
-        wallet.check_transaction_status(transaction_id)
-    elif sys.argv[2] == "transactions":
-        wallet.transactions()
-    else:
-        print("Invalid command. Use './dsc wallet help' for help.")
-
-if __name__ == "__main__":
-    main()
