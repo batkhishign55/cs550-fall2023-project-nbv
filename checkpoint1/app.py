@@ -1,4 +1,5 @@
 import readline
+import subprocess
 
 from wallet import Wallet
 
@@ -22,8 +23,7 @@ def startApp():
             print("this is pool key")
             pass
         elif inp == "./dsc metronome":
-            print("this is metronome")
-            pass
+            subprocess.Popen(['gunicorn', 'metronome:app', '-b', '127.0.0.1:5000'])
         elif inp == "./dsc validator":
             print("this is validator")
             pass
@@ -51,8 +51,10 @@ def startApp():
         elif inp == "./dsc validator pos_check":
             print("this is validator pos_check")
             pass
+        elif inp == "" or inp == None:
+            pass
         else:
-            print("Unknown command!\nRun ./dsc help to get help:")
+            print("Unknown command!\nRun ./dsc help to get started")
 
 
 if __name__ == '__main__':

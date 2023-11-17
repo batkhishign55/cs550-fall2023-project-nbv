@@ -1,2 +1,5 @@
 base58
 cryptography
+Flask
+gunicorn
+APScheduler
