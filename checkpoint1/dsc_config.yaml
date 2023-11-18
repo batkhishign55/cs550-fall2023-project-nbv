@@ -1,3 +1,4 @@
+version: v1.0
 wallet:
   public_key: 8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U
 pool:
