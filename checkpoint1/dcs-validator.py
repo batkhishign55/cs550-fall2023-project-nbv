@@ -1,13 +1,16 @@
 # example of proof-of-work algorithm
 import hashlib
+import struct
 import sys
 import time
+import blake3
 
 import yaml
 import config_validator
 
 # Define the template of the desired structure
 template = {
+    'version': str,
     'validator': {
         'fingerprint': str,
         'public_key': str,
@@ -18,64 +21,53 @@ template = {
     }
 }
 
-if not config_validator.validate(template):
+validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
+if not validator_config:
+    print(err)
     exit(1)
 
-with open('dsc_config.yaml', 'r') as file:
-    config = yaml.safe_load(file)
 
-version = config['version']
+def blake3_hash(data):
+    hashed = blake3.blake3(data).hexdigest()
+    return hashed
+
 
 def display_help():
-    return f"""DSC: DataSys Coin Blockchain {version}
+    return f"""DSC: DataSys Coin Blockchain {validator_config['version']}
 Help menu for validator, supported commands:
 ./dsc validator help
 ./dsc validator pos_check
 ./dsc validator"""
 
+# TODO - Start PoW, PoM, PoS based on enable flag in config. 
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "help":
         print(display_help())
-        
-
-max_nonce = 2 ** 32 # 4 billion
-
-def proof_of_work(header, difficulty_bits):
-    # calculate the difficulty target
-    target = 2 ** (256-difficulty_bits)
-    for nonce in range(max_nonce):
-        hash_result = hashlib.sha256((str(header)+str(nonce)).encode()).hexdigest()
-        # check if this is a valid result, below the target
-        if int(hash_result, 16) < target:
-            print(f"Success with nonce {nonce}")
-            print(f"Hash is {hash_result}")
-            return (hash_result,nonce)
-    print(f"Failed after {nonce} (max_nonce) tries")
-    return nonce
-
-
-if __name__ == '__main__':
-    nonce = 0
-    hash_result = ''
-    # difficulty from 0 to 31 bits
-    difficulty_bits = 30
     
-    difficulty = 2 ** difficulty_bits
-    print(f"Difficulty: {difficulty} ({difficulty_bits} bits)")
-    print(f"Starting search...")
-    # checkpoint the current time
+
+hash_input = {
+    'fingerprint' : (validator_config['validator']['fingerprint'].encode('utf-8')).ljust(16, b'\0'), 
+    'public_key' :(validator_config['validator']['public_key'].encode('utf-8')).ljust(32, b'\0'), 
+    'NONCE': 0 
+}
+difficulty_bits = 30
+hash_input_struct = struct.Struct('16s 32s Q')
+
+def pow_lookup(hash_input, hash_lookup, difficulty, block_time):
     start_time = time.time()
-    # make a new block which includes the hash from the previous block
-    # we fake a block of transactions - just a string
-    new_block = 'test block with transactions' + hash_result
-    # find a valid nonce for the new block
-    (hash_result, nonce) = proof_of_work(new_block, difficulty_bits)
-    # checkpoint how long it took to find a result
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Elapsed Time: {elapsed_time} seconds")
-    if elapsed_time > 0:
-        # estimate the hashes per second
-        hash_power = float((nonce)/elapsed_time)
-        print(f"Hashing Power: {hash_power} hashes per second")
+    while (time.time() - start_time) < block_time:
+        data = hash_input_struct.pack(hash_input['fingerprint'], hash_input['public_key'], hash_input['NONCE'])
+        hash_output = blake3_hash(data)
+        prefix_hash_output = hash_output[:difficulty]
+        prefix_hash_lookup = hash_lookup[:difficulty]
+        if prefix_hash_lookup == prefix_hash_output:
+            return hash_input['NONCE']
+        else:
+            hash_input['NONCE']+=1
+
+    return -1
+
+hash_lookup = blake3_hash(b'sample')
+
+print(pow_lookup(hash_input, hash_lookup, 30, 6))
