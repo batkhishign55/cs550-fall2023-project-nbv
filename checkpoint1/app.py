@@ -1,11 +1,13 @@
 import readline
 import subprocess
 
+import yaml
+
 from wallet import Wallet
 
 
 app_info = "DSC: DataSys Coin Blockchain v1.0"
-
+config = None
 wallet = Wallet()
 
 
@@ -15,13 +17,17 @@ def handle_input(inp):
     elif inp == "./dsc wallet":
         print("this is wallet")
     elif inp == "./dsc blockchain":
-        subprocess.Popen(['gunicorn', 'blockchain:app', '-b', '127.0.0.1:5001'])
+        cfg_bc = config['blockchain']
+        subprocess.Popen(['gunicorn', 'blockchain:app', '-b',
+                         '{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])])
     elif inp == "./dsc pool key":
         print("this is pool key")
     elif inp == "./dsc pool":
         print("this is pool")
     elif inp == "./dsc metronome":
-        subprocess.Popen(['gunicorn', 'metronome:app', '-b', '127.0.0.1:5000'])
+        cfg_m = config['metronome']
+        subprocess.Popen(['gunicorn', 'metronome:app', '-b',
+                         '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
     elif inp == "./dsc validator":
         print("this is validator")
         pass
@@ -53,6 +59,14 @@ def handle_input(inp):
         print("Unknown command!\nRun ./dsc help to get started")
 
 
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+
 def start_app():
     print(app_info+"\n./dsc help to get started")
     while True:
@@ -64,4 +78,6 @@ def start_app():
 
 
 if __name__ == '__main__':
+    cfg = load_config()
+    config = cfg
     start_app()

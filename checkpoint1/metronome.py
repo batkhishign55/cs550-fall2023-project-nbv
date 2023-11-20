@@ -4,6 +4,7 @@ import base58
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
+import yaml
 
 from block import Block
 
@@ -27,7 +28,16 @@ def nonce():
     print("received nonce")
 
 
-# print("{time.time()}")
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+
+config = load_config()
+cfg_bc = config['blockchain']
 print(datetime.datetime.now(), " ", app_info)
 print(datetime.datetime.now(), " ", "Metronome started with 2 worker threads")
 
@@ -35,7 +45,7 @@ scheduler = BackgroundScheduler()
 
 
 def send_to_blockchain(new_block):
-    url = 'http://localhost:5001/addblock'
+    url = 'http://{0}:{1}/addblock'.format(cfg_bc['server'], cfg_bc['port'])
     print(new_block)
     # print(new_block.decode("utf-8"))
     x = requests.post(url, data=b"x00x00x01")
