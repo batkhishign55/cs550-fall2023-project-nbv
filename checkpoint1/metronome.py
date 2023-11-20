@@ -1,8 +1,9 @@
-import threading
 import datetime
+import time
 import base58
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
+import requests
 
 from block import Block
 
@@ -26,23 +27,33 @@ def nonce():
     print("received nonce")
 
 
-def start_job():
-    threading.Timer(6.0, create_block).start()
-
-
+# print("{time.time()}")
 print(datetime.datetime.now(), " ", app_info)
 print(datetime.datetime.now(), " ", "Metronome started with 2 worker threads")
 
 scheduler = BackgroundScheduler()
 
 
+def send_to_blockchain(new_block):
+    url = 'http://localhost:5001/addblock'
+    print(new_block)
+    # print(new_block.decode("utf-8"))
+    x = requests.post(url, data=b"x00x00x01")
+
+
 def create_block():
-    block = Block(version=1, prev_block_hash="00000000000000000000000000000000",
-                  difficulty_target=1000, transactions=[])
+    block = Block(
+        version=1,
+        prev_block_hash="",
+        block_id=1,
+        timestamp=int(time.time()),
+        difficulty_target=1000,
+        nonce=123, transactions=[])
     new_block = block.pack()
     # to-do send to blockchain
-    print(datetime.datetime.now(), " ", "New block created, hash ", base58.b58encode(new_block).decode("utf-8"), ", sent to blockchain")
-    
+    send_to_blockchain(new_block)
+    # print(datetime.datetime.now(), " ", "New block created, hash ",
+    #       base58.b58encode(new_block).decode("utf-8"), ", sent to blockchain")
 
 
 scheduler.add_job(create_block, 'interval', seconds=6)

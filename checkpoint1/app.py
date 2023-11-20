@@ -15,7 +15,7 @@ def handle_input(inp):
     elif inp == "./dsc wallet":
         print("this is wallet")
     elif inp == "./dsc blockchain":
-        print("this is blockchain")
+        subprocess.Popen(['gunicorn', 'blockchain:app', '-b', '127.0.0.1:5001'])
     elif inp == "./dsc pool key":
         print("this is pool key")
     elif inp == "./dsc pool":
