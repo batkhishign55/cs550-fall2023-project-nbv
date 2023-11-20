@@ -12,6 +12,8 @@ import datetime
 import sys
 import random
 
+app_info = "DSC: DataSys Coin Blockchain v1.0"
+
 
 class Wallet:
     def __init__(self):
@@ -207,3 +209,6 @@ class Wallet:
             print(f"{self.get_current_date_time()} Transaction #{idx}: id={txn['id']}, status={txn['status']}, "
                   f"timestamp=\"{txn['timestamp']}\", coin={txn['coin']}, "
                   f"source={txn['source']}, destination={txn['destination']}")
+
+    def print_help(self):
+        print(app_info+"\nHelp menu for Wallet, supported commands:\n./dsc wallet help\n./dsc wallet create\n./dsc wallet key\n./dsc wallet balance\n./dsc wallet send <amount> <address>\n./dsc wallet transaction <ID>\n./dsc wallet transactions\n")
