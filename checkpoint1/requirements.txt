@@ -3,3 +3,5 @@ cryptography
 Flask
 gunicorn
 APScheduler
+blake3
+PyYAML

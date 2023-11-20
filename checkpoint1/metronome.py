@@ -1,12 +1,40 @@
+import logging
 import threading
 import datetime
+import time
 import base58
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import config_validator
 from block import Block
 
-app_info = "DSC v1.0"
+
+# Set up the logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(message)s', datefmt='%Y%m%d %H:%M:%S')
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
+# metronome config template
+template = {
+    'version': str,
+    'metronome': {
+        'server': str,
+        'port': int,
+        'threads': int
+    }
+}
+
+validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
+if not validator_config:
+    logger.error(err)
+    exit(1)
+
+app_info = f"DSC {validator_config['version']}"
 
 app = Flask(__name__)
 
@@ -23,15 +51,15 @@ def dif():
 
 @app.route('/nonce')
 def nonce():
-    print("received nonce")
+    logger.info("received nonce")
 
 
 def start_job():
     threading.Timer(6.0, create_block).start()
 
 
-print(datetime.datetime.now(), " ", app_info)
-print(datetime.datetime.now(), " ", "Metronome started with 2 worker threads")
+logger.info(f'{app_info}')
+logger.info(f"Metronome started with {validator_config['metronome']['threads']} worker threads")
 
 scheduler = BackgroundScheduler()
 
@@ -41,7 +69,7 @@ def create_block():
                   difficulty_target=1000, transactions=[])
     new_block = block.pack()
     # to-do send to blockchain
-    print(datetime.datetime.now(), " ", "New block created, hash ", base58.b58encode(new_block).decode("utf-8"), ", sent to blockchain")
+    logger.info(f"New block created, hash {base58.b58encode(new_block).decode('utf-8')} sent to blockchain")
     
 
 

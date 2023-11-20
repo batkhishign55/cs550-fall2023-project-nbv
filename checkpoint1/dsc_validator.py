@@ -49,7 +49,7 @@ def blake3_hash(data):
 
 # validator usage info
 def display_help():
-    return f"""DSC: DataSys Coin Blockchain {validator_config['version']}
+    return f"""DSC: DataSys Coin Blockchain {config_validator['version']}
 Help menu for validator, supported commands:
 ./dsc validator help
 ./dsc validator pos_check
@@ -62,6 +62,7 @@ def pow_lookup(hash_input, hash_lookup, block_time):
     start_time = time.time()
     hash_count = 0
     nonce = -1
+    found = False
     while (time.time() - start_time) < block_time:
         data = hash_input_struct.pack(hash_input['fingerprint'], hash_input['public_key'], hash_input['NONCE'])
         hash_output = blake3_hash(data)
@@ -70,10 +71,12 @@ def pow_lookup(hash_input, hash_lookup, block_time):
         prefix_hash_lookup = hash_lookup['hash'][:diff//5]
         if prefix_hash_lookup == prefix_hash_output:
             nonce = hash_input['NONCE']
-            break
         else:
             hash_input['NONCE']+=1
+    
     end_time = time.time()
+    while (time.time() - start_time) < block_time:
+        time.sleep(0.1)
     return nonce, hash_count/(end_time-start_time)
 
 # temp code
@@ -82,14 +85,14 @@ def generate_random_block():
     return {'block': 'block'+letters[:10], 'diff': 30, 'hash':blake3_hash(''.join(random.choice(letters) for _ in range(10)).encode('utf-8'))}
 
 
-def pow_job(fingerprint):
+def pow_job(validator_config):
     #get last block hash
     last_block = generate_random_block()
     # hash_value = blake3_hash(last_block_hash['hash'])
     logger.info(f'block {last_block["block"]}, diff {last_block["diff"]}, hash {last_block["hash"]}')
 
     hash_input = {
-    'fingerprint' : (fingerprint.encode('utf-8')).ljust(16, b'\0'), 
+    'fingerprint' : (validator_config['validator']['fingerprint'].encode('utf-8')).ljust(16, b'\0'), 
     'public_key' : (validator_config['validator']['public_key'].encode('utf-8')).ljust(32, b'\0'), 
     'NONCE': 0 
     }
@@ -97,38 +100,39 @@ def pow_job(fingerprint):
     nonce, speed = pow_lookup(hash_input, last_block, 6)
     logger.info(f'{last_block["block"]}, NONCE {nonce} ({speed:.2f} H/S)')
 
+def init_validator():
 
-validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
-if not validator_config:
-    logger.error(err)
-    exit(1)
+    validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
+    if not validator_config:
+        logger.error(err)
+        exit(1)
 
-fingerprint = validator_config['validator']['fingerprint']
+    fingerprint = validator_config['validator']['fingerprint']
 
-# Log an info message
-logger.info(f'DSC {validator_config["version"]}')
+    # Log an info message
+    logger.info(f'DSC {validator_config["version"]}')
 
-if validator_config['validator']['proof_pow']['enable']:
-    logger.info('Proof of Work (2-threads)')
-    logger.info(f'Fingerprint: {fingerprint}')
-    
-    # Create a scheduler object
-    scheduler = BackgroundScheduler()
+    if validator_config['validator']['proof_pow']['enable']:
+        logger.info(f'Proof of Work ({validator_config["validator"]["proof_pow"]["threads_hash"]}-threads)')
+        logger.info(f'Fingerprint: {fingerprint}')
+        
+        # Create a scheduler object
+        scheduler = BackgroundScheduler()
 
-    # Create a trigger that runs every 6 seconds
-    trigger = IntervalTrigger(seconds=6)
+        # Create a trigger that runs every 6 seconds
+        trigger = IntervalTrigger(seconds=7)
 
-    # Add the job to the scheduler
-    scheduler.add_job(func = pow_job, args=[fingerprint], trigger= trigger)
+        # Add the job to the scheduler
+        scheduler.add_job(func = pow_job, args=[validator_config], trigger= trigger)
 
-    # Start the scheduler
-    scheduler.start()
+        # Start the scheduler
+        scheduler.start()
 
-    # Keep the program running indefinitely
-    while True:
-        time.sleep(1)
+        # Keep the program running indefinitely
+        while True:
+            time.sleep(1)
 
-
+# init_validator()
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "help":
         print(display_help())
