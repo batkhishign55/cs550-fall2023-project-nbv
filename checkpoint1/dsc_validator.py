@@ -235,8 +235,9 @@ def init_validator():
         logger.info(f'Fingerprint: {fingerprint.decode("utf-8")}')
         # Add the job to the scheduler
         scheduler.add_job(func = pow_job, args=[fingerprint, public_key], trigger= trigger)
+        # Start the scheduler
+        scheduler.start()
 
-       
     elif validator_config['validator']['proof_pom']['enable']:
         thread_config = validator_config["validator"]["proof_pom"]["threads_hash"]
         mem_config = validator_config["validator"]["proof_pom"]["memory"]
@@ -254,9 +255,10 @@ def init_validator():
         keys = list(tree.keys())    
         # Add the job to the scheduler
         scheduler.add_job(func = pom_job, trigger= trigger)
-    # Start the scheduler
-    scheduler.start()
-
+        # Start the scheduler
+        scheduler.start()
+    else:
+        logger.error("Unsupported feature enabled.")
     # Keep the program running indefinitely
     while True:
         time.sleep(1)
