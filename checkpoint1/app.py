@@ -1,34 +1,40 @@
 import readline
 import subprocess
 import dsc_validator
+import yaml
 from wallet import Wallet
 
 
 app_info = "DSC: DataSys Coin Blockchain v1.0"
-
+config = None
 wallet = Wallet()
+
 
 def handle_input(inp):
     if inp == "./dsc help":
         print(app_info+"\nHelp menu, supported commands:\n./dsc help\n./dsc wallet\n./dsc blockchain\n./dsc pool key\n./dsc metronome\n./dsc validator\n./dsc monitor\n")
     elif inp == "./dsc wallet":
         print("this is wallet")
-        pass
     elif inp == "./dsc blockchain":
-        print("this is blockchain")
-        pass
+        cfg_bc = config['blockchain']
+        subprocess.Popen(['gunicorn', 'blockchain:app', '-b',
+                         '{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])])
     elif inp == "./dsc pool key":
         print("this is pool key")
-        pass
+    elif inp == "./dsc pool":
+        cfg_p = config['pool']
+        subprocess.Popen(['gunicorn', 'pool:app', '-b',
+                         '{0}:{1}'.format(cfg_p['server'], cfg_p['port'])])
     elif inp == "./dsc metronome":
-        subprocess.Popen(['gunicorn', 'metronome:app', '-b', '127.0.0.1:5000'])
+        cfg_m = config['metronome']
+        subprocess.Popen(['gunicorn', 'metronome:app', '-b',
+                         '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
     elif inp == "./dsc validator":
         dsc_validator.init_validator()
     elif inp == "./dsc monitor":
         print("this is monitor")
-        pass
     elif inp == "./dsc wallet help":
-        print(app_info+"\nHelp menu for Wallet, supported commands:\n./dsc wallet help\n./dsc wallet create\n./dsc wallet key\n./dsc wallet balance\n./dsc wallet send <amount> <address>\n./dsc wallet transaction <ID>\n")
+        wallet.print_help()
     elif inp == "./dsc wallet create":
         wallet.create_wallet()
     elif inp == "./dsc wallet key":
@@ -39,18 +45,29 @@ def handle_input(inp):
         inp_arr = inp.split(" ")
         wallet.send_coins(int(float(inp_arr[3])), inp_arr[4])
     elif inp.startswith("./dsc wallet transaction"):
+        wallet.send_coins(int(float(inp_arr[3])), inp_arr[4])
+    elif inp.startswith("./dsc wallet transaction "):
         inp_arr = inp.split(" ")
         wallet.check_transaction_status(inp_arr[3])
+    elif inp == "./dsc wallet transactions":
+        wallet.transactions()
     elif inp == "./dsc validator help":
         print(app_info+"\nHelp menu for validator, supported commands:\n./dsc validator help\n./dsc validator pos_check\n./dsc validator\n")
-        pass
     elif inp == "./dsc validator pos_check":
         print("this is validator pos_check")
-        pass
     elif inp == "" or inp == None:
         pass
     else:
         print("Unknown command!\nRun ./dsc help to get started")
+
+
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
 
 def start_app():
     print(app_info+"\n./dsc help to get started")
@@ -63,4 +80,6 @@ def start_app():
 
 
 if __name__ == '__main__':
+    cfg = load_config()
+    config = cfg
     start_app()

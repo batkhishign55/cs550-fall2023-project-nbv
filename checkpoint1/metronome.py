@@ -3,6 +3,8 @@ import threading
 import datetime
 import time
 import base58
+import requests
+import yaml
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 import config_validator
@@ -35,7 +37,6 @@ if not validator_config:
     exit(1)
 
 app_info = f"DSC {validator_config['version']}"
-
 app = Flask(__name__)
 
 
@@ -54,23 +55,43 @@ def nonce():
     logger.info("received nonce")
 
 
-def start_job():
-    threading.Timer(6.0, create_block).start()
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
 
 
+
+config = load_config()
+cfg_bc = config['blockchain']
 logger.info(f'{app_info}')
 logger.info(f"Metronome started with {validator_config['metronome']['threads']} worker threads")
 
 scheduler = BackgroundScheduler()
 
 
+def send_to_blockchain(new_block):
+    url = 'http://{0}:{1}/addblock'.format(cfg_bc['server'], cfg_bc['port'])
+    print(new_block)
+    # print(new_block.decode("utf-8"))
+    x = requests.post(url, data=b"x00x00x01")
+
+
 def create_block():
-    block = Block(version=1, prev_block_hash="00000000000000000000000000000000",
-                  difficulty_target=1000, transactions=[])
+    block = Block(
+        version=1,
+        prev_block_hash="",
+        block_id=1,
+        timestamp=int(time.time()),
+        difficulty_target=1000,
+        nonce=123, transactions=[])
     new_block = block.pack()
     # to-do send to blockchain
-    logger.info(f"New block created, hash {base58.b58encode(new_block).decode('utf-8')} sent to blockchain")
-    
+    send_to_blockchain(new_block)
+    #logger.info(f"New block created, hash {base58.b58encode(new_block).decode('utf-8')} sent to blockchain")
+
 
 
 scheduler.add_job(create_block, 'interval', seconds=6)
