@@ -8,8 +8,6 @@ import yaml
 
 from block import Block
 
-app_info = "DSC v1.0"
-
 app = Flask(__name__)
 
 
@@ -38,7 +36,7 @@ def load_config():
 
 config = load_config()
 cfg_bc = config['blockchain']
-print(datetime.datetime.now(), " ", app_info)
+print(datetime.datetime.now(), " DSC " + config["version"])
 print(datetime.datetime.now(), " ", "Metronome started with 2 worker threads")
 
 scheduler = BackgroundScheduler()

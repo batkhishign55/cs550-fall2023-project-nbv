@@ -23,7 +23,9 @@ def handle_input(inp):
     elif inp == "./dsc pool key":
         print("this is pool key")
     elif inp == "./dsc pool":
-        print("this is pool")
+        cfg_p = config['pool']
+        subprocess.Popen(['gunicorn', 'pool:app', '-b',
+                         '{0}:{1}'.format(cfg_p['server'], cfg_p['port'])])
     elif inp == "./dsc metronome":
         cfg_m = config['metronome']
         subprocess.Popen(['gunicorn', 'metronome:app', '-b',
