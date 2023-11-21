@@ -15,7 +15,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from bintrees import FastRBTree
 
-# import metronome
+import metronome
+import blockchain
 import config_validator
 
 # Set up the logger
@@ -189,7 +190,7 @@ def generate_random_block():
 
 def pow_job(fingerprint, public_key):
     #get last block hash
-    last_block = generate_random_block()
+    last_block = generate_random_block() #blockchain.lastblock()
     # hash_value = blake3_hash(last_block_hash['hash'])
     logger.info(f'block {last_block["block"]}, diff {last_block["diff"]}, hash {last_block["hash"]}')
 
@@ -198,8 +199,8 @@ def pow_job(fingerprint, public_key):
     'public_key' : public_key, 
     'NONCE': 0 
     }
-    # difficulty_bits =  metronome.dif()
-    nonce, speed = pow_lookup(hash_input, last_block, 6)
+    difficulty_bits =  metronome.dif()
+    nonce, speed = pow_lookup(hash_input, last_block, difficulty_bits//5)
     logger.info(f'{last_block["block"]}, NONCE {nonce} ({speed:.2f} H/S)')
 
 def pom_job():
@@ -208,14 +209,14 @@ def pom_job():
     # hash_value = blake3_hash(last_block_hash['hash'])
     logger.info(f'block {last_block["block"]}, diff {last_block["diff"]}, hash {last_block["hash"]}')
 
-    # difficulty_bits =  metronome.dif()
-    nonce = pom_lookup(last_block, 6)
+    difficulty_bits =  metronome.dif()
+    nonce = pom_lookup(last_block, difficulty_bits//5)
     logger.info(f'{last_block["block"]}, NONCE {nonce}')
 
 
 def init_validator():
 
-    validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
+    validator_config, err = config_validator.get_validated_fields('dsc-config.yaml', template)
     if not validator_config:
         logger.error(err)
         exit(1)
@@ -262,48 +263,9 @@ def init_validator():
     # Keep the program running indefinitely
     while True:
         time.sleep(1)
-init_validator()
+
+
+# init_validator()
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "help":
         print(display_help())
-
-# for i in range(0, 100):
-#     # Generating a random string of length 10
-#     random_string = generate_random_string(10)
-#     # print(random_string)
-#     sample_bytes = random_string.encode('utf-8')
-
-#     # hash_lookup = "sample"
-#     # hash_loopkup_encode = sample_bytes.encode('utf-8')
-#     hash_value = blake3_hash(sample_bytes)
-
-#     print(pow_lookup(hash_input, hash_value, 30, 6))
-
-# hash_input_pom = {
-#     'fingerprint' : (validator_config['validator']['fingerprint'].encode('utf-8')).ljust(16, b'\0'), 
-#     'public_key' :(validator_config['validator']['public_key'].encode('utf-8')).ljust(32, b'\0'), 
-#     # 'NONCE': 0 
-# }
-
-# hashes = bytearray(1000 // (24 + 8)) 
-# offset = 0
-
-# for i in range(1000 // (24 + 8)):
-
-#   # Pack the data    
-#   data = struct.pack('16s 32s Q', hash_input_pom['fingerprint'], hash_input_pom['public_key'], i) 
-  
-#   # Hash  
-#   hash_value = blake3.blake3(data).digest()
-  
-#   # Truncate hash to 24 bytes
-#   hash_bytes = hash_value[:24]
-
-  
-#   # Store hash and nonce
-#   hashes[offset:offset+24] = hash_bytes
-#   hashes[offset+24:offset+32] = struct.pack('Q', i)  
-  
-#   offset += 32
-
-# print(hashes)
