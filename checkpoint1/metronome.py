@@ -15,7 +15,8 @@ from block import Block
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(message)s', datefmt='%Y%m%d %H:%M:%S')
+formatter = logging.Formatter(
+    '%(asctime)s.%(msecs)03d %(message)s', datefmt='%Y%m%d %H:%M:%S')
 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
@@ -31,7 +32,8 @@ template = {
     }
 }
 
-validator_config, err = config_validator.get_validated_fields('dsc-config.yaml', template)
+validator_config, err = config_validator.get_validated_fields(
+    'dsc-config.yaml', template)
 if not validator_config:
     logger.error(err)
     exit(1)
@@ -63,11 +65,11 @@ def load_config():
             print(exc)
 
 
-
 config = load_config()
 cfg_bc = config['blockchain']
 logger.info(f'{app_info}')
-logger.info(f"Metronome started with {validator_config['metronome']['threads']} worker threads")
+logger.info(
+    f"Metronome started with {validator_config['metronome']['threads']} worker threads")
 
 scheduler = BackgroundScheduler()
 
@@ -75,7 +77,7 @@ scheduler = BackgroundScheduler()
 def send_to_blockchain(new_block):
     url = 'http://{0}:{1}/addblock'.format(cfg_bc['server'], cfg_bc['port'])
     # print(new_block.decode("utf-8"))
-    x = requests.post(url, data=b"x00x00x01")
+    x = requests.post(url, data=base58.b58encode(new_block).decode('utf-8'))
 
 
 def create_block():
@@ -89,8 +91,8 @@ def create_block():
     new_block = block.pack()
     # to-do send to blockchain
     send_to_blockchain(new_block)
-    #logger.info(f"New block created, hash {base58.b58encode(new_block).decode('utf-8')} sent to blockchain")
-
+    logger.info(
+        f"New block created, hash {base58.b58encode(new_block).decode('utf-8')} sent to blockchain")
 
 
 scheduler.add_job(create_block, 'interval', seconds=6)

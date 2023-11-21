@@ -28,6 +28,9 @@ class Blockchain:
         for block in self.blocks:
             print(block.data)
 
+    def get_block_length(self):
+        return len(self.blocks)
+
     def get_last_block(self):
         return self.blocks[-1].get_data()
 
@@ -39,7 +42,7 @@ def hello():
 
 @app.post('/addblock')
 def addblock():
-    blockchain.add_block(request.data)
+    blockchain.add_block(request.data.decode('utf-8')   )
     print(datetime.datetime.now(
     ), " New block received from metronome, Block hash " + request.data.decode('utf-8'))
     return {"message": "success"}
@@ -48,7 +51,7 @@ def addblock():
 # curl localhost:10002/lastblock
 @app.get('/lastblock')
 def lastblock():
-    return blockchain.get_last_block()
+    return {"block": blockchain.get_last_block(), "block_id": blockchain.get_block_length()}
 
 
 # curl "localhost:10002/balance?wallet=some-address"
