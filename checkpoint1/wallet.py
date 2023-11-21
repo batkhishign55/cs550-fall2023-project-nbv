@@ -26,15 +26,15 @@ class Wallet:
 
     def load_keys_from_config(self):
         config = configparser.ConfigParser()
-        config.read('dsc-config.yaml')
+        config.read('dsc_config.yaml')
         public_key = config['Keys']['public_key']
         private_key = config['Keys']['private_key']
         return public_key, private_key
 
     def load_wallet(self):
-        if os.path.exists('dsc-config.yaml'):
+        if os.path.exists('dsc_config.yaml'):
             config = configparser.ConfigParser()
-            config.read('dsc-config.yaml')
+            config.read('dsc_config.yaml')
             if 'Keys' in config:
                 self.public_key = config['Keys']['public_key']
                 self.private_key = config['Keys']['private_key']
@@ -43,7 +43,7 @@ class Wallet:
         self.load_wallet()
         public_key = None
         private_key = None
-        if not os.path.exists('dsc-config.yaml') and not os.path.exists('dsc-key.yaml'):
+        if not os.path.exists('dsc_config.yaml') and not os.path.exists('dsc-key.yaml'):
             # Use SHA256 to create public/private keys of 256-bit length
             # Store keys in Base58 encoding
             # Generate an RSA key pair
@@ -82,13 +82,13 @@ class Wallet:
                 'private_key': private_key
             }
 
-            with open('dsc-config.yaml', 'w') as configfile:
+            with open('dsc_config.yaml', 'w') as configfile:
                 config.write(configfile)
 
             with open('dsc-key.yaml', 'w') as keyfile:
                 keyfile.write(private_key)
 
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Public Address: {public_key}\n{self.get_current_date_time()} DSC Private Address: {private_key}\n{self.get_current_date_time()} Saved public key to dsc-config.yaml and private key to dsc-key.yaml in local folder")
+            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Public Address: {public_key}\n{self.get_current_date_time()} DSC Private Address: {private_key}\n{self.get_current_date_time()} Saved public key to dsc_config.yaml and private key to dsc-key.yaml in local folder")
         else:
 
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Wallet already exists at dsc-key.yaml, wallet create aborted")
@@ -98,10 +98,10 @@ class Wallet:
     def print_keys(self):
         self.load_wallet()
         if hasattr(self, 'public_key'):
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Reading dsc-config.yaml and dsc-key.yaml...\n{self.get_current_date_time()} DSC Public Address: {self.public_key}\n{self.get_current_date_time()} DSC Private Address: {self.private_key}")
+            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Reading dsc_config.yaml and dsc-key.yaml...\n{self.get_current_date_time()} DSC Public Address: {self.public_key}\n{self.get_current_date_time()} DSC Private Address: {self.private_key}")
 
         else:
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Error in finding key information, ensure that dsc-config.yaml and dsc-key.yaml exist and that they contain the correct information. You may need to run “./dsc wallet create”")
+            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Error in finding key information, ensure that dsc_config.yaml and dsc-key.yaml exist and that they contain the correct information. You may need to run “./dsc wallet create”")
 
     def get_balance(self):
         if self.public_key in self.balances:

@@ -44,8 +44,6 @@ def handle_input(inp):
     elif inp.startswith("./dsc wallet send"):
         inp_arr = inp.split(" ")
         wallet.send_coins(int(float(inp_arr[3])), inp_arr[4])
-    elif inp.startswith("./dsc wallet transaction"):
-        wallet.send_coins(int(float(inp_arr[3])), inp_arr[4])
     elif inp.startswith("./dsc wallet transaction "):
         inp_arr = inp.split(" ")
         wallet.check_transaction_status(inp_arr[3])
