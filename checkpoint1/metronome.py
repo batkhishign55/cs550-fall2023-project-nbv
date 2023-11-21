@@ -74,7 +74,6 @@ scheduler = BackgroundScheduler()
 
 def send_to_blockchain(new_block):
     url = 'http://{0}:{1}/addblock'.format(cfg_bc['server'], cfg_bc['port'])
-    print(new_block)
     # print(new_block.decode("utf-8"))
     x = requests.post(url, data=b"x00x00x01")
 

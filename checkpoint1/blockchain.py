@@ -44,9 +44,8 @@ def addblock():
     ), " New block received from metronome, Block hash " + request.data.decode('utf-8'))
     return {"message": "success"}
 
+
 # curl localhost:10002/lastblock
-
-
 @app.get('/lastblock')
 def lastblock():
     return blockchain.get_last_block()
