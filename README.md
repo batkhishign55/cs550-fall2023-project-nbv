@@ -1,8 +1,10 @@
-### CS550 Advanced Operating Systems Project Repo
+
+### CS550 Advanced Operating Systems - DataSys Coin(DSC) Blockchain Project
 **Illinois Institute of Technology**  
 
-**Team Name**: please-write-team-name  
+**Team Name**: NBV  
 **Students**:  
-* please-write-student1-name (please-write-email-address)  
-* please-write-student2-name (please-write-email-address) or remove  
-* please-write-student3-name (please-write-email-address) or remove  
+* Batkhishig Dulamsurankhor (bdulamsurankhor@hawk.iit.edu)
+* Nitin Singh (nsingh33@hawk.iit.edu)
+* Vaishnavi Papudesi Babu (vpapudesibabu@hawk.iit.edu)
+
