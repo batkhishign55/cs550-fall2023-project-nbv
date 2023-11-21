@@ -15,8 +15,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from bintrees import FastRBTree
 
-import metronome
-import blockchain
 import config_validator
 
 # Set up the logger
@@ -199,7 +197,7 @@ def pow_job(fingerprint, public_key):
     'public_key' : public_key, 
     'NONCE': 0 
     }
-    difficulty_bits =  metronome.dif()
+    difficulty_bits =  30
     nonce, speed = pow_lookup(hash_input, last_block, difficulty_bits//5)
     logger.info(f'{last_block["block"]}, NONCE {nonce} ({speed:.2f} H/S)')
 
@@ -209,7 +207,7 @@ def pom_job():
     # hash_value = blake3_hash(last_block_hash['hash'])
     logger.info(f'block {last_block["block"]}, diff {last_block["diff"]}, hash {last_block["hash"]}')
 
-    difficulty_bits =  metronome.dif()
+    difficulty_bits =  30
     nonce = pom_lookup(last_block, difficulty_bits//5)
     logger.info(f'{last_block["block"]}, NONCE {nonce}')
 

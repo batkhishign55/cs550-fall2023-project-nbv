@@ -31,7 +31,7 @@ template = {
     }
 }
 
-validator_config, err = config_validator.get_validated_fields('dsc_config.yaml', template)
+validator_config, err = config_validator.get_validated_fields('dsc-config.yaml', template)
 if not validator_config:
     logger.error(err)
     exit(1)
