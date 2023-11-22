@@ -1,0 +1,38 @@
+version: v1.0
+wallet:
+  public_key: 8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U
+pool:
+  server: 127.0.0.1
+  port: 10001
+  threads: 2
+blockchain:
+  server: 127.0.0.1
+  port: 10002
+  threads: 2
+metronome:
+  server: 127.0.0.1
+  port: 10003
+  threads: 2
+validator:
+  fingerprint: e6a75580-a7d3-4bee-9d21-f289a45bd36b
+  public_key: 8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U
+  proof_pow:
+    enable: True
+    threads_hash: 2
+  proof_pom:
+    enable: False
+    threads_hash: 2
+    memory: 1G
+  proof_pos:
+    enable: False
+    threads_hash: 2
+    disk: 10G
+    buckets: 256
+    cup_size: 32768
+    cups_per_bucket: 40
+    #hash_size: 24
+    #nonce_size: 8
+    #memory: buckets*cup_size*(hash_size+nonce_size)~256MB
+    #disk: buckets*cup_size*cups_per_bucket*(hash_size+nonce_size)~10GB
+    threads_io: 1
+    vault: ~/dsc-pos.vault
