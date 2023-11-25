@@ -11,7 +11,8 @@ import os
 import datetime
 import sys
 import random
-
+from blockchain import Blockchain
+ 
 app_info = "DSC: DataSys Coin Blockchain v1.0"
 
 
@@ -20,6 +21,7 @@ class Wallet:
         self.public_key = None
         self.private_key = None
         self.balances = {}
+        self.blockchain = Blockchain()
 
     def get_current_date_time(self):
         return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S.%f")
