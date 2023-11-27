@@ -1,5 +1,7 @@
 import datetime
 import logging
+import random
+from collections import deque
 
 import jsonify
 from flask import Flask, request
@@ -57,6 +59,20 @@ def transaction_status():
         return "Unconfirmed"
     else:
         return "Unknown"
+
+
+@app.post('/get_txn')  # Provides valid transactions to validators
+def get_transactions(self, num_transactions):
+    submitted_txs = []
+    tx_ids = list(self.unconfirmed.keys())
+    # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
+    for _ in range(num_transactions):
+        if tx_ids:
+            tx_id = random.choice(tx_ids)
+            tx = self.unconfirmed.pop(tx_id)
+            self.submitted[tx_id] = tx
+            submitted_txs.append(tx)
+    return submitted_txs
 
 
 @app.post('/receive_txn')
