@@ -27,10 +27,15 @@ class Blockchain:
     def get_last_block_hash(self):
         return self.blocks[-1].calculate_hash()
 
-    def get_balance(self):
+    def get_balance(self, wallet):
+        balance = 0
         for block in self.blocks:
-            res = block.unpack()
-        return
+            for txn in block.transactions:
+                if txn.recipient_address == wallet:
+                    balance += txn.value
+                if txn.sender_address == wallet:
+                    balance -= txn.value
+        return balance
 
 
 @app.route('/')
@@ -53,13 +58,13 @@ def lastblock():
     return {"block": blockchain.get_last_block_hash(), "block_id": blockchain.get_block_length()}
 
 
-# curl "localhost:10002/balance?wallet=some-address"
+# curl "localhost:10002/balance?wallet=Recipient1"
 @app.get('/balance')
 def balance():
     balance = blockchain.get_balance(request.args["wallet"])
     print(datetime.datetime.now(), " Balance request for " +
-          request.args["wallet"] + ", " + str(float(0)) + " coins")
-    return "0"
+          request.args["wallet"] + ", " + str(balance) + " coins")
+    return {"balance": balance}
 
 
 # curl "localhost:10002/txn?id=some-txn-id"

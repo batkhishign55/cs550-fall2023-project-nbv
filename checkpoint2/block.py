@@ -22,8 +22,8 @@ class Transaction:
     @classmethod
     def unpack(cls, data):
         unpacked_data = struct.unpack("<32s32sdq16s32s", data)
-        return cls(unpacked_data[0].decode('utf-8'), 
-                   unpacked_data[1].decode('utf-8'), 
+        return cls(unpacked_data[0].decode('utf-8').rstrip('\x00'), 
+                   unpacked_data[1].decode('utf-8').rstrip('\x00'), 
                    unpacked_data[2], 
                    unpacked_data[3], 
                    unpacked_data[4].decode('utf-8'), 
