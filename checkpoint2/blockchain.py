@@ -1,11 +1,11 @@
 import datetime
+import time
 from flask import Flask, request
 import yaml
 
-from block import Block
+from block import Block, Transaction
 
 app_info = "DSC v1.0"
-blockchain = None
 
 app = Flask(__name__)
 
@@ -36,6 +36,9 @@ class Blockchain:
                 if txn.sender_address == wallet:
                     balance -= txn.value
         return balance
+
+
+blockchain = Blockchain()
 
 
 @app.route('/')
@@ -83,9 +86,6 @@ def transactions():
     return "none found"
 
 
-blockchain = Blockchain()
-
-
 def load_config():
     with open("dsc-config.yaml", "r") as stream:
         try:
@@ -94,6 +94,19 @@ def load_config():
             print(exc)
 
 
+def create_genesis_block():
+
+    transaction1 = Transaction(sender_address="dummy1", recipient_address="dummy2", value=1000, timestamp=int(
+        time.time()), transaction_id="ID1", signature="Signature1")
+    block = Block(version=config["version"], prev_block_hash="0", block_id=-1, timestamp=int(
+        time.time()), difficulty_target=30, nonce=123456, transactions=[transaction1])
+    print(block.__dict__)
+
+    blockchain.add_block(block)
+
+
 config = load_config()
 print(datetime.datetime.now(), " DSC " + config["version"])
 print(datetime.datetime.now(), " Blockchain server started with 2 worker threads")
+
+create_genesis_block()
