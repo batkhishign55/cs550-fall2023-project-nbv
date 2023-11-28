@@ -2,27 +2,20 @@ import datetime
 from flask import Flask, request
 import yaml
 
+from block import Block
+
 app_info = "DSC v1.0"
 blockchain = None
 
 app = Flask(__name__)
 
 
-class Block:
-    def __init__(self, data):
-        self.data = data
-
-    def get_data(self):
-        return self.data
-
-
 class Blockchain:
     def __init__(self):
         self.blocks = []
 
-    def add_block(self, data):
-        new_block = Block(data)
-        self.blocks.append(new_block)
+    def add_block(self, block):
+        self.blocks.append(block)
 
     def print_blocks(self):
         for block in self.blocks:
@@ -31,8 +24,13 @@ class Blockchain:
     def get_block_length(self):
         return len(self.blocks)
 
-    def get_last_block(self):
-        return self.blocks[-1].get_data()
+    def get_last_block_hash(self):
+        return self.blocks[-1].calculate_hash()
+
+    def get_balance(self):
+        for block in self.blocks:
+            res = block.unpack()
+        return
 
 
 @app.route('/')
@@ -42,21 +40,23 @@ def hello():
 
 @app.post('/addblock')
 def addblock():
-    blockchain.add_block(request.data.decode('utf-8')   )
+    block = Block.unpack(request.data)
+    blockchain.add_block(block)
     print(datetime.datetime.now(
-    ), " New block received from metronome, Block hash " + request.data.decode('utf-8'))
+    ), f" New block received from metronome, Block hash {block.calculate_hash()}")
     return {"message": "success"}
 
 
 # curl localhost:10002/lastblock
 @app.get('/lastblock')
 def lastblock():
-    return {"block": blockchain.get_last_block(), "block_id": blockchain.get_block_length()}
+    return {"block": blockchain.get_last_block_hash(), "block_id": blockchain.get_block_length()}
 
 
 # curl "localhost:10002/balance?wallet=some-address"
 @app.get('/balance')
 def balance():
+    balance = blockchain.get_balance(request.args["wallet"])
     print(datetime.datetime.now(), " Balance request for " +
           request.args["wallet"] + ", " + str(float(0)) + " coins")
     return "0"

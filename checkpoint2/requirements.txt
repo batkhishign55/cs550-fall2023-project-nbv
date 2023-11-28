@@ -11,3 +11,4 @@ gunicorn
 APScheduler
 requests
 pyyaml
+jsonify
