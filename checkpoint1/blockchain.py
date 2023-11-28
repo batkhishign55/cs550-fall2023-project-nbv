@@ -11,6 +11,7 @@ app = Flask(__name__)
 class Block:
     def __init__(self, data):
         self.data = data
+        
 
     def get_data(self):
         return self.data
@@ -19,6 +20,8 @@ class Block:
 class Blockchain:
     def __init__(self):
         self.blocks = []
+        self.wallets = set()
+        self.total_coins = 0
 
     def add_block(self, data):
         new_block = Block(data)
@@ -30,10 +33,18 @@ class Blockchain:
 
     def get_block_length(self):
         return len(self.blocks)
-
+        
     def get_last_block(self):
         return self.blocks[-1].get_data()
 
+    def get_statistics(self):
+        last_block_header = self.get_last_block()
+        unique_wallets = len(self.wallets)
+        total_coins = self.total_coins
+        return {"last_block_header": last_block_header, "unique_wallet_addresses": unique_wallets, "total_coins": total_coins}
+
+
+    
 
 @app.route('/')
 def hello():

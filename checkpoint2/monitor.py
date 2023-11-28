@@ -1,8 +1,9 @@
 import requests
 import json
 
-from blockchain import lastblock
-from pool import transaction_status
+from blockchain import Blockchain
+from pool import get_transactions_statistics
+from metronome import get_metronome_info
 
 num_submitted_transactions =0
 num_unconfirmed_transactions =0
@@ -13,10 +14,10 @@ class Monitor:
 
     def get_blockchain_stats(self):
         try:
-            resp_blockchain = lastblock()
-            last_block_header = resp_blockchain['block']
-            unique_wallet_addresses = 100  # Need to Replace with actual implementation to count unique wallet addresses
-            total_coins = 10000  # Need to Replace with actual implementation to calculate total coins in circulation
+            resp_blockchain = Blockchain().get_statistics()
+            last_block_header = resp_blockchain['last_block_header']
+            unique_wallet_addresses = resp_blockchain["unique_wallet_addresses"] 
+            total_coins = resp_blockchain["total_coins"]  
             return last_block_header, unique_wallet_addresses, total_coins
         except Exception as e:
             print(f"Error getting Blockchain stats: {str(e)}")
@@ -24,11 +25,9 @@ class Monitor:
 
     def get_pool_stats(self):
         try:
-            transactions_data = transaction_status()
-            if transactions_data =='Submitted':
-                num_submitted_transactions = num_submitted_transactions + 1
-            elif transactions_data =='Unconfirmed':
-                num_unconfirmed_transactions = num_unconfirmed_transactions + 1
+            transactions_data = get_transactions_statistics()
+            num_submitted_transactions = transactions_data["submitted_transactions"]
+            num_unconfirmed_transactions = transactions_data["unconfirmed_transactions"]
             return num_submitted_transactions, num_unconfirmed_transactions
         except Exception as e:
             print(f"Error getting Pool stats: {str(e)}")
@@ -36,19 +35,18 @@ class Monitor:
 
     def get_metronome_stats(self):
         try:
-            response = {"validators":10, "hashes_per_sec": 300, "total_hashes_stored":30}
-            metronome_data = response
-            num_validators = metronome_data.get('validators', 0)
-            hashes_per_sec = metronome_data.get('hashes_per_sec', 0)
-            total_hashes_stored = metronome_data.get('total_hashes_stored', 0)
+            response = get_transactions_statistics()
+            metronome_data = json.load(response)
+            num_validators = metronome_data["validators"]
+            hashes_per_sec = metronome_data["hashes_per_sec"]
+            total_hashes_stored = metronome_data["total_hashes_stored"]
             return num_validators, hashes_per_sec, total_hashes_stored
         except Exception as e:
             print(f"Error getting Metronome stats: {str(e)}")
             return None, None, None
 
-Monitor().get_blockchain_stats()
+
 if __name__ == "__main__":
-    
 
     monitor = Monitor()
 

@@ -90,6 +90,12 @@ def receive_txn():
     else:
         return "Bad Request"
 
+@app.route('/transactions_statistics')
+def get_transactions_statistics():
+    submitted_count = len(submitted_transactions)
+    unconfirmed_count = len(unconfirmed_transactions)
+    return {"submitted_transactions": submitted_count, "unconfirmed_transactions": unconfirmed_count}
+
 
 def load_config():
     with open("dsc-config.yaml", "r") as stream:
