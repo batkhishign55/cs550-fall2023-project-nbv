@@ -17,10 +17,6 @@ class Blockchain:
     def add_block(self, block):
         self.blocks.append(block)
 
-    def print_blocks(self):
-        for block in self.blocks:
-            print(block.data)
-
     def get_block_length(self):
         return len(self.blocks)
 
@@ -98,15 +94,14 @@ def create_genesis_block():
 
     transaction1 = Transaction(sender_address="dummy1", recipient_address="dummy2", value=1000, timestamp=int(
         time.time()), transaction_id="ID1", signature="Signature1")
-    block = Block(version=config["version"], prev_block_hash="0", block_id=-1, timestamp=int(
+    block = Block(version=2, prev_block_hash="0", block_id=0, timestamp=int(
         time.time()), difficulty_target=30, nonce=123456, transactions=[transaction1])
-    print(block.__dict__)
 
     blockchain.add_block(block)
 
 
 config = load_config()
-print(datetime.datetime.now(), " DSC " + config["version"])
+print(datetime.datetime.now(), " DSC " + str(config["version"]))
 print(datetime.datetime.now(), " Blockchain server started with 2 worker threads")
 
 create_genesis_block()

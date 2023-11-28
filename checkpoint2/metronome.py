@@ -80,10 +80,8 @@ def create_block():
     # get last block hash
     url = 'http://{0}:{1}/lastblock'.format(cfg_bc['server'], cfg_bc['port'])
     res = requests.get(url)
-    print(res)
-    print(res.json())
 
-    block = Block(version=config["version"], prev_block_hash=res.json()['block'], block_id=res.json()['block_id'], timestamp=int(
+    block = Block(version=int(config["version"]), prev_block_hash=res.json()['block'], block_id=res.json()['block_id'], timestamp=int(
         time.time()), difficulty_target=30, nonce=123456, transactions=[])
 
     # Serialize and Deserialize Block
