@@ -91,17 +91,18 @@ def create_block():
     logger.info(
         f"New block created, hash {block.calculate_hash()} sent to blockchain")
 
+@app.route('/get_metronome_info')
 def get_metronome_info():
     # Placeholder values, needs to be replaced 
     num_validators = 50
     hashes_per_sec = 500
     total_hashes_stored = 10000
 
-    return jsonify({
+    return {
         "validators": num_validators,
         "hashes_per_sec": hashes_per_sec,
         "total_hashes_stored": total_hashes_stored
-    })
+    }
 
 scheduler.add_job(create_block, 'interval', seconds=6)
 scheduler.start()

@@ -13,6 +13,8 @@ app = Flask(__name__)
 class Blockchain:
     def __init__(self):
         self.blocks = []
+        self.wallets = set()
+        self.total_coins = 0
 
     def add_block(self, block):
         self.blocks.append(block)
@@ -37,11 +39,21 @@ class Blockchain:
                     balance -= txn.value
         return balance
 
+    def get_statistics(self):
+        last_block_header = self.get_last_block()
+        unique_wallets = len(self.wallets)
+        total_coins = self.total_coins
+        return {"last_block_header": last_block_header, "unique_wallet_addresses": unique_wallets, "total_coins": total_coins}
+
+
 
 @app.route('/')
 def hello():
     return 'Blockchain'
 
+@app.route('/get_statistics')
+def get_statistic():
+    return {"response": Blockchain().get_statistic()}
 
 @app.post('/addblock')
 def addblock():

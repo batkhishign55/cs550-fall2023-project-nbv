@@ -10,11 +10,14 @@ num_unconfirmed_transactions =0
 
 class Monitor:
     def __init__(self):
-        pass
+        self.blockchain_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
+        self.pool_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
+        self.metronome_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
 
     def get_blockchain_stats(self):
         try:
-            resp_blockchain = Blockchain().get_statistics()
+            response = requests.get(self.blockchain_url + '/get_statistics')
+            resp_blockchain = response.json() 
             last_block_header = resp_blockchain['last_block_header']
             unique_wallet_addresses = resp_blockchain["unique_wallet_addresses"] 
             total_coins = resp_blockchain["total_coins"]  
@@ -25,7 +28,8 @@ class Monitor:
 
     def get_pool_stats(self):
         try:
-            transactions_data = get_transactions_statistics()
+            response = requests.get(self.pool_url + '/transactions_statistics')
+            transactions_data = response.json()
             num_submitted_transactions = transactions_data["submitted_transactions"]
             num_unconfirmed_transactions = transactions_data["unconfirmed_transactions"]
             return num_submitted_transactions, num_unconfirmed_transactions
@@ -35,8 +39,8 @@ class Monitor:
 
     def get_metronome_stats(self):
         try:
-            response = get_transactions_statistics()
-            metronome_data = json.load(response)
+            response = requests.get(self.metronome_url + '/get_metronome_info')
+            metronome_data = response.json()
             num_validators = metronome_data["validators"]
             hashes_per_sec = metronome_data["hashes_per_sec"]
             total_hashes_stored = metronome_data["total_hashes_stored"]
