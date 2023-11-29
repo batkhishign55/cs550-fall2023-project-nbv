@@ -1,9 +1,7 @@
 import requests
 import json
 
-from blockchain import Blockchain
-from pool import get_transactions_statistics
-from metronome import get_metronome_info
+
 
 num_submitted_transactions =0
 num_unconfirmed_transactions =0
