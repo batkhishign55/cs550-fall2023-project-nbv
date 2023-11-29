@@ -1,7 +1,9 @@
 import readline
 import subprocess
-import dsc_validator
+# import dsc_validator
 import yaml
+
+import dsc_validator
 from wallet import Wallet
 
 
@@ -30,7 +32,7 @@ def handle_input(inp):
         subprocess.Popen(['gunicorn', 'metronome:app', '-b',
                          '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
     elif inp == "./dsc validator":
-        dsc_validator.init_validator()
+        dsc_validator.init()
     elif inp == "./dsc monitor":
         print("this is monitor")
     elif inp == "./dsc wallet help":

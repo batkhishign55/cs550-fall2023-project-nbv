@@ -49,6 +49,15 @@ def validate_transaction_data(data):
 def hello():
     return 'Pool'
 
+@app.post('/confimed_transactions')
+def cleanup_confirmed_transactions():
+    # call blockchain's unpack to unpack inputted block and retrieve transactions.
+    block = request.args.get('block')
+    transactions = {} #dummy
+    #assume transactions list
+    tx_ids = list(transactions.keys())
+    for t_id in tx_ids:
+        submitted_transactions.pop(t_id)
 
 @app.get('/transaction_status')
 def transaction_status():
@@ -62,17 +71,16 @@ def transaction_status():
 
 
 @app.post('/get_txn')  # Provides valid transactions to validators
-def get_transactions(self, num_transactions):
-    submitted_txs = []
-    tx_ids = list(self.unconfirmed.keys())
+def get_transactions():
+    num_transactions = request.args.get('max_txns')
+    tx_ids = list(unconfirmed_transactions.keys())
     # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
-    for _ in range(num_transactions):
+    for _ in range(int(num_transactions)):
         if tx_ids:
             tx_id = random.choice(tx_ids)
-            tx = self.unconfirmed.pop(tx_id)
-            self.submitted[tx_id] = tx
-            submitted_txs.append(tx)
-    return submitted_txs
+            tx = unconfirmed_transactions.pop(tx_id)
+            submitted_transactions[tx_id] = tx
+    return {"submitted_txns": submitted_transactions}
 
 
 @app.post('/receive_txn')

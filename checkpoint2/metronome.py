@@ -1,4 +1,5 @@
 import logging
+import time
 import requests
 import yaml
 from flask import Flask
@@ -45,7 +46,10 @@ def hello():
 
 @app.route('/difficulty')
 def dif():
-    return 30
+    url = 'http://{0}:{1}/difficulty'.format(cfg_bc['server'], cfg_bc['port'])
+    response = requests.get(url)
+    difficulty = response.json()['difficulty_bits']
+    return {'difficulty': difficulty}
 
 
 @app.route('/nonce')
@@ -72,21 +76,20 @@ scheduler = BackgroundScheduler()
 
 def send_to_blockchain(new_block):
     url = 'http://{0}:{1}/addblock'.format(cfg_bc['server'], cfg_bc['port'])
-    # print(new_block.decode("utf-8"))
     x = requests.post(url, data=new_block)
 
 
 def create_block():
+    # get last block hash
+    url = 'http://{0}:{1}/lastblock'.format(cfg_bc['server'], cfg_bc['port'])
+    res = requests.get(url)
 
-    transaction1 = Transaction("Sender1", "Recipient1", 10.5, 1637997900, "ID1", "Signature1")
-    transaction2 = Transaction("Sender2", "Recipient2", 5.0, 1637998000, "ID2", "Signature2")
-
-    # Create Block with Transactions
-    block = Block(1, "159f4ef0bcc5fa42fc90bdf7acfd7308bf9b3dacd501d23f3cff799d3f6b3234", 123, 1637998100, 3, 123456, [transaction1, transaction2])
+    block = Block(version=int(config["version"]), prev_block_hash=res.json()['block'], block_id=res.json()['block_id'], timestamp=int(
+        time.time()), difficulty_target=30, nonce=123456, transactions=[])
 
     # Serialize and Deserialize Block
     serialized_block = block.pack()
-    
+
     send_to_blockchain(serialized_block)
     logger.info(
         f"New block created, hash {block.calculate_hash()} sent to blockchain")
