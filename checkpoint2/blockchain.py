@@ -12,6 +12,23 @@ app_info = "DSC v1.0"
 app = Flask(__name__)
 
 
+class Cache:
+    def __init__(self):
+        self.cache_dict = {}
+
+    def lookup_in_cache(self, wallet):
+        if wallet in self.cache_dict:
+            return self.cache_dict[wallet]
+        else:
+            return (0, -1)
+
+    def update_cache(self, wallet, balance, block_height):
+        self.cache_dict[wallet] = (balance, block_height)
+
+    def clear_cache(self):
+        self.cache_dict = {}
+
+
 class Blockchain:
     def __init__(self):
         self.blocks = []
@@ -28,15 +45,17 @@ class Blockchain:
     def get_last_block_hash(self):
         return self.blocks[-1].calculate_hash()
 
-    def get_balance(self, wallet):
-        balance = 0
-        for block in self.blocks:
+    def get_balance(self, wallet, cache_block_height, cache_bal):
+        balance = cache_bal
+        for block in self.blocks[cache_block_height+1:]:
+            print("searched in a block")
             for txn in block.transactions:
                 if txn.recipient_address == wallet:
                     balance += txn.value
                 if txn.sender_address == wallet:
                     balance -= txn.value
-        return balance
+
+        return (balance, len(self.blocks)-1)
 
     def update_difficulty(self, created_by):
         if created_by == "validator":
@@ -56,6 +75,7 @@ class Blockchain:
 
 
 blockchain = Blockchain()
+cache = Cache()
 
 
 @app.route('/')
@@ -73,7 +93,8 @@ def addblock():
     print(datetime.datetime.now(
     ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
     blockchain.update_difficulty(received_from)
-    url = 'http://{0}:{1}/confirmed_transactions'.format(cfg_pool['server'], cfg_pool['port'])
+    url = 'http://{0}:{1}/confirmed_transactions'.format(
+        cfg_pool['server'], cfg_pool['port'])
     x = requests.post(url, data=block.transactions)
 
     return {"message": "success"}
@@ -88,10 +109,26 @@ def lastblock():
 # curl "localhost:10002/balance?wallet=Recipient1"
 @app.get('/balance')
 def balance():
-    balance = blockchain.get_balance(request.args["wallet"])
+    (cache_bal, cache_block_height) = cache.lookup_in_cache(
+        request.args["wallet"])
+
+    (balance, block_height) = blockchain.get_balance(
+        request.args["wallet"], cache_block_height, cache_bal)
+
+    if (cache_block_height != block_height):
+        print(request.args["wallet"], balance, block_height)
+        cache.update_cache(request.args["wallet"], balance, block_height)
+
     print(datetime.datetime.now(), " Balance request for " +
           request.args["wallet"] + ", " + str(balance) + " coins")
     return {"balance": balance}
+
+
+# curl "localhost:10002/cache"
+@app.get('/cache')
+def get_cache():
+    print(cache.__dict__)
+    return {"message": "success"}
 
 
 # curl "localhost:10002/txn?id=some-txn-id"
