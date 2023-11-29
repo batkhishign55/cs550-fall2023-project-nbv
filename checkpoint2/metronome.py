@@ -57,7 +57,7 @@ def dif():
 def block_ack():
     global ack_received
     ack_received = True
-    print(f'Received an ACK from validator upon block creation')
+    logger.info('Received an ACK from validator upon block creation')
     return {'received': 'OK'}
 
 @app.route('/nonce')
@@ -107,10 +107,11 @@ def create_block():
 def watcher():
     timeout_duration = 6
     start_time = time.time()
+    global ack_received
     ack_received = False
     while time.time() - start_time < timeout_duration:
         if ack_received:  # will be true if validator ack's
-            time.sleep(timeout_duration - time.time() - start_time)
+            time.sleep(timeout_duration - (time.time() - start_time))
     if not ack_received:
         create_block()
 

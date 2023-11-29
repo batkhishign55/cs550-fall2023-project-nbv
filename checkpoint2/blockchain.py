@@ -1,5 +1,7 @@
 import datetime
 import time
+
+import requests
 from flask import Flask, request
 import yaml
 
@@ -71,6 +73,9 @@ def addblock():
     print(datetime.datetime.now(
     ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
     blockchain.update_difficulty(received_from)
+    url = 'http://{0}:{1}/confirmed_transactions'.format(cfg_pool['server'], cfg_pool['port'])
+    x = requests.post(url, data=block.transactions)
+
     return {"message": "success"}
 
 
@@ -134,3 +139,4 @@ print(datetime.datetime.now(), " DSC " + str(config["version"]))
 print(datetime.datetime.now(), " Blockchain server started with 2 worker threads")
 difficulty_bits = 30
 create_genesis_block()
+cfg_pool = config['pool']

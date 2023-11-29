@@ -49,15 +49,15 @@ def validate_transaction_data(data):
 def hello():
     return 'Pool'
 
-@app.post('/confimed_transactions')
+@app.post('/confirmed_transactions')
 def cleanup_confirmed_transactions():
+    # logger.info(f'confirmed transactions clean up in progress')
     # call blockchain's unpack to unpack inputted block and retrieve transactions.
-    block = request.args.get('block')
-    transactions = {} #dummy
-    #assume transactions list
-    tx_ids = list(transactions.keys())
-    for t_id in tx_ids:
-        submitted_transactions.pop(t_id)
+    transactions = request.data
+    # tx_ids = list(transactions.keys())
+    for transaction in transactions:
+        submitted_transactions.pop(transaction.transaction_id)
+    return {"Status": "OK"}
 
 @app.get('/transaction_status')
 def transaction_status():
