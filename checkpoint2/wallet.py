@@ -1,20 +1,31 @@
 import hashlib
 import base58
 import time
-import json
-from collections import namedtuple
 import configparser
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 import os
 import datetime
-import sys
 import random
-# from blockchain import Blockchain
-from pool import receive_txn
+
+import requests
+import yaml
 
 app_info = "DSC: DataSys Coin Blockchain v1.0"
+
+
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+
+config = load_config()
+cfg_bc = config['blockchain']
+cfg_p = config['pool']
 
 
 class Wallet:
@@ -22,7 +33,7 @@ class Wallet:
         self.public_key = None
         self.private_key = None
         self.balances = {}
-        # self.blockchain = Blockchain()
+        self.load_wallet()
 
     def get_current_date_time(self):
         return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S.%f")
@@ -107,54 +118,29 @@ class Wallet:
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Error in finding key information, ensure that dsc_config.yaml and dsc-key.yaml exist and that they contain the correct information. You may need to run “./dsc wallet create”")
 
     def get_balance(self):
-        if self.public_key in self.balances:
-            print(
-                f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance: {self.balances[self.public_key]} coins at block x")
-            return self.balances[self.public_key]
-        else:
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance:0.0 coins at block x")
-            return 0.0
+        url = 'http://{0}:{1}/balance?wallet={2}'.format(
+            cfg_bc['server'], cfg_bc['port'], self.public_key)
+        res = requests.get(url)
+        print(
+            f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Wallet balance: {res.json()['balance']} coins at block x")
 
     def send_coins(self, value, recipient):
-        self.load_wallet()
-        sender_public_key = self.public_key
-        print(self.balances, self.public_key,
-              self.balances.get(sender_public_key))
-        if self.balances.get(sender_public_key, 0.0) >= value:
-            print("send_coins")
-            self.balances[sender_public_key] -= value
 
-            if recipient in self.balances:
-                self.balances[recipient] += value
-            else:
-                self.balances[recipient] = value
+        transaction_id = self.generate_transaction_id()
+        data = {'txn_id': transaction_id, 'sender': self.public_key,
+                'recipient': recipient, 'value': value, 'signature': 'sth', 'timestamp': int(time.time())}
+        url = 'http://{0}:{1}/receive_txn'.format(
+            cfg_p['server'], cfg_p['port'])
+        print(url, data)
+        res = requests.post(url, json=data)
 
-            transaction_id = self.generate_transaction_id()
-
-            print(f"{self.get_current_date_time()} DSC v1.0")
-            print(
-                f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
+        if res.status_code != 200:
             print(
                 f"{self.get_current_date_time()} Created transaction {transaction_id}, Sending {value} coins to {recipient}")
             print(
                 f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
-
-            status = "submitted"
-            for _ in range(5):  # Simulate status check for 5 seconds
-                print(
-                    f"{self.get_current_date_time()} Transaction {transaction_id} status [{status}]")
-                time.sleep(1)  # Simulate waiting 1 second
-
-                if status == "submitted":
-                    status = "unconfirmed"
-                elif status == "unconfirmed":
-                    status = "confirmed"
-                    break  # Transaction confirmed, break out of loop
-
-            print(
-                f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed], block X")
-            print(
-                f"{self.get_current_date_time()} DSC Wallet balance: {self.get_balance()} coins at block X")
+        else:
+            print(f"error occured")
 
     def generate_transaction_id(self):
         # Generate a random transaction ID

@@ -106,7 +106,7 @@ def lastblock():
     return {"block": blockchain.get_last_block_hash(), "block_id": blockchain.get_block_length()}
 
 
-# curl "localhost:10002/balance?wallet=Recipient1"
+# curl "localhost:10002/balance?wallet=Hje7meKmLgEAZBBTSRP9ZQmnwhPuL7N4G5kFq52qu6mt"
 @app.get('/balance')
 def balance():
     (cache_bal, cache_block_height) = cache.lookup_in_cache(
@@ -163,7 +163,7 @@ def load_config():
 
 
 def create_genesis_block():
-    transaction1 = Transaction(sender_address="dummy1", recipient_address="dummy2", value=1000, timestamp=int(
+    transaction1 = Transaction(sender_address="", recipient_address="Hje7meKmLgEAZBBTSRP9ZQmnwhPuL7N4G5kFq52qu6mt", value=1000, timestamp=int(
         time.time()), transaction_id="ID1", signature="Signature1")
     block = Block(version=2, prev_block_hash="0", block_id=0, timestamp=int(
         time.time()), difficulty_target=30, nonce=123456, transactions=[transaction1])
