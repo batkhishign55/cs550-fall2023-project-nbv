@@ -109,9 +109,7 @@ def watcher():
     start_time = time.time()
     global ack_received
     ack_received = False
-    while time.time() - start_time < timeout_duration:
-        if ack_received:  # will be true if validator ack's
-            time.sleep(timeout_duration - (time.time() - start_time))
+    time.sleep(timeout_duration)
     if not ack_received:
         create_block()
 
