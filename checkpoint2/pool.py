@@ -1,9 +1,6 @@
-import datetime
 import logging
 import random
-from collections import deque
 
-import jsonify
 from flask import Flask, request
 import yaml
 
@@ -11,7 +8,8 @@ import yaml
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(message)s', datefmt='%Y%m%d %H:%M:%S')
+formatter = logging.Formatter(
+    '%(asctime)s.%(msecs)03d %(message)s', datefmt='%Y%m%d %H:%M:%S')
 
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
@@ -33,11 +31,11 @@ def validate_transaction_data(data):
 
     # Check the length of each attribute
     if (
-            len(data['sender_public_address']) == 32 and
-            len(data['recipient_public_address']) == 32 and
+            len(data['sender']) == 32 and
+            len(data['recipient']) == 32 and
             isinstance(data['value'], float) and
             isinstance(data['timestamp'], int) and
-            len(data['transaction_id']) == 16 and
+            len(data['txn_id']) == 16 and
             len(data['signature']) == 32
     ):
         return True
@@ -49,15 +47,17 @@ def validate_transaction_data(data):
 def hello():
     return 'Pool'
 
-@app.post('/confimed_transactions')
+
+@app.post('/confirmed_transactions')
 def cleanup_confirmed_transactions():
+    # logger.info(f'confirmed transactions clean up in progress')
     # call blockchain's unpack to unpack inputted block and retrieve transactions.
-    block = request.args.get('block')
-    transactions = {} #dummy
-    #assume transactions list
-    tx_ids = list(transactions.keys())
-    for t_id in tx_ids:
-        submitted_transactions.pop(t_id)
+    transactions = request.data
+    # tx_ids = list(transactions.keys())
+    for transaction in transactions:
+        submitted_transactions.pop(transaction.transaction_id)
+    return {"Status": "OK"}
+
 
 @app.get('/transaction_status')
 def transaction_status():
@@ -85,14 +85,16 @@ def get_transactions():
 
 @app.post('/receive_txn')
 def receive_txn():
+    print(request.json)
     data = request.get_json()
-    transaction_id = data.get('transaction_id')
     transaction_object = data.get('transaction_object')
-    if validate_transaction_data(transaction_object):
+    # if validate_transaction_data(data):
+    if True:
         # Store transaction in unconfirmed transactions database
-        unconfirmed_transactions[transaction_id] = transaction_object
+        unconfirmed_transactions[data['txn_id']] = transaction_object
         # Print transaction in console
-        logger.info(f"Transaction {transaction_id} received from {transaction_object['source']}, ACK")
+        logger.info(
+            f"Transaction {data['txn_id']} received from {data['source']}, ACK")
         return "Accepted"
 
     else:

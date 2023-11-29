@@ -215,7 +215,6 @@ def init_validator():
     # get last block hash
     lastblock_url = 'http://{0}:{1}/lastblock'.format(cfg_bc['server'], cfg_bc['port'])
     last_block = requests.get(lastblock_url)
-
     difficulty_url = 'http://{0}:{1}/difficulty'.format(cfg_metronome['server'], cfg_metronome['port'])
     res = requests.get(difficulty_url)
     difficulty_bits = res.json()['difficulty']
@@ -237,6 +236,8 @@ def init_validator():
         send_to_blockchain(serialized_block)
         logger.info(
             f"New block created, hash {block.calculate_hash()} sent to blockchain")
+        ack_url = 'http://{0}:{1}/block/ack'.format(cfg_metronome['server'], cfg_metronome['port'])
+        requests.get(ack_url)
         cache = None
     else:
         logger.info("Could not find a nonce")
