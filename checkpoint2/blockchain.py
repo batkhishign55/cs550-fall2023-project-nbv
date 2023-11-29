@@ -13,6 +13,9 @@ app = Flask(__name__)
 class Blockchain:
     def __init__(self):
         self.blocks = []
+        self.difficulty_bits = 30
+        self.consecutive_validator_blocks = 0
+        self.consecutive_metronome_blocks = 0
 
     def add_block(self, block):
         self.blocks.append(block)
@@ -33,6 +36,22 @@ class Blockchain:
                     balance -= txn.value
         return balance
 
+    def update_difficulty(self, created_by):
+        if created_by == "validator":
+            self.consecutive_validator_blocks += 1
+        else:
+            self.consecutive_metronome_blocks += 1
+
+        if self.consecutive_metronome_blocks == 4:
+            self.difficulty_bits -= 1
+            self.consecutive_metronome_blocks = 0
+            self.consecutive_validator_blocks = 0
+
+        if self.consecutive_validator_blocks == 8:
+            self.difficulty_bits += 1
+            self.consecutive_metronome_blocks = 0
+            self.consecutive_validator_blocks = 0
+
 
 blockchain = Blockchain()
 
@@ -46,8 +65,12 @@ def hello():
 def addblock():
     block = Block.unpack(request.data)
     blockchain.add_block(block)
+    received_from = "metronome"
+    if len(block.transactions) != 0:
+        received_from = "validator"
     print(datetime.datetime.now(
-    ), f" New block received from metronome, Block hash {block.calculate_hash()}")
+    ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
+    blockchain.update_difficulty(received_from)
     return {"message": "success"}
 
 
@@ -82,6 +105,13 @@ def transactions():
     return "none found"
 
 
+@app.get('/difficulty')
+def difficulty():
+    # print(datetime.datetime.now(), " Transactions request for " +
+    #       request.args["ids"] + ", none found")
+    return {"difficulty_bits": blockchain.difficulty_bits}
+
+
 def load_config():
     with open("dsc-config.yaml", "r") as stream:
         try:
@@ -91,7 +121,6 @@ def load_config():
 
 
 def create_genesis_block():
-
     transaction1 = Transaction(sender_address="dummy1", recipient_address="dummy2", value=1000, timestamp=int(
         time.time()), transaction_id="ID1", signature="Signature1")
     block = Block(version=2, prev_block_hash="0", block_id=0, timestamp=int(
@@ -103,5 +132,5 @@ def create_genesis_block():
 config = load_config()
 print(datetime.datetime.now(), " DSC " + str(config["version"]))
 print(datetime.datetime.now(), " Blockchain server started with 2 worker threads")
-
+difficulty_bits = 30
 create_genesis_block()

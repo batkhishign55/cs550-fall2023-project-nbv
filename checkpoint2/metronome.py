@@ -46,7 +46,10 @@ def hello():
 
 @app.route('/difficulty')
 def dif():
-    return 30
+    url = 'http://{0}:{1}/difficulty'.format(cfg_bc['server'], cfg_bc['port'])
+    response = requests.get(url)
+    difficulty = response.json()['difficulty_bits']
+    return {'difficulty': difficulty}
 
 
 @app.route('/nonce')
