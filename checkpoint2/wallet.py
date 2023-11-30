@@ -151,8 +151,7 @@ class Wallet:
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
-        return uuid.uuid4()
-        # return ''.join(random.choices('0123456789ABCDEF', k=16))
+        return uuid.uuid4().hex
 
     def check_transaction_status(self, txn_id):
 
