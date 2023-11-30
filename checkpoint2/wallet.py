@@ -130,9 +130,7 @@ class Wallet:
 
         transaction_id = self.generate_transaction_id()
 
-        print(transaction_id)
-
-        data = {'txn_id': str(transaction_id)[:16], 'sender': self.public_key,
+        data = {'txn_id': str(transaction_id), 'sender': self.public_key,
                 'recipient': recipient, 'value': value}
         message = json.dumps(data, indent=2)
         # Sign the message with the private key
@@ -153,7 +151,7 @@ class Wallet:
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
-        return uuid.uuid4()
+        return uuid.uuid4().hex
 
     def check_transaction_status(self, txn_id):
 
