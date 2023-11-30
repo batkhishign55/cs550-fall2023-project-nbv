@@ -31,7 +31,6 @@ class Wallet:
     def __init__(self):
         self.public_key = None
         self.private_key = None
-        self.balances = {}
         self.load_keys_from_yaml()
 
     def get_current_date_time(self):
@@ -148,7 +147,7 @@ class Wallet:
             print(
                 f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
         else:
-            print(f"error occured")
+            print(f"{res.status_code} {res.text}")
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
@@ -157,7 +156,8 @@ class Wallet:
 
     def check_transaction_status(self, txn_id):
 
-        url = 'http://{0}:{1}/transaction_status?txn_id={2}'.format(cfg_p['server'], cfg_p['port'], txn_id)
+        url = 'http://{0}:{1}/transaction_status?txn_id={2}'.format(
+            cfg_p['server'], cfg_p['port'], txn_id)
         res = requests.get(url)
         print(res.json())
 

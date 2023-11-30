@@ -4,6 +4,7 @@ import random
 import base58
 
 from flask import Flask, request
+import requests
 import yaml
 import base58
 import yaml
@@ -27,27 +28,6 @@ app = Flask(__name__)
 # In-memory databases for unconfirmed and submitted transactions
 unconfirmed_transactions = {}
 submitted_transactions = {}
-
-
-def validate_transaction_data(data):
-    # Check if all required keys are present
-    required_keys = ['sender_public_address', 'recipient_public_address', 'value', 'timestamp', 'transaction_id',
-                     'signature']
-    if not all(key in data for key in required_keys):
-        return False
-
-    # Check the length of each attribute
-    if (
-            len(data['sender']) == 32 and
-            len(data['recipient']) == 32 and
-            isinstance(data['value'], float) and
-            isinstance(data['timestamp'], int) and
-            len(data['txn_id']) == 16 and
-            len(data['signature']) == 32
-    ):
-        return True
-
-    return False
 
 
 @app.route('/')
@@ -110,6 +90,18 @@ def verify_signature(message, signature, public_key_string):
         return False
 
 
+def validate_transaction(message, public_key):
+    if message['sender'] != public_key:
+        raise Exception("sender is not the owner")
+
+    url = 'http://{0}:{1}/balance?wallet={2}'.format(
+        cfg_bc['server'], cfg_bc['port'], public_key)
+    res = requests.get(url)
+
+    if res.json()['balance'] < message['value']:
+        raise Exception("insufficient funds")
+
+
 @app.post('/receive_txn')
 def receive_txn():
     data = request.get_json()
@@ -117,11 +109,17 @@ def receive_txn():
         data['message'], data['signature'], data['public_key'])
 
     if is_verified:
-        print("Signature verified. The message is authentic.")
+        print("Signature verified.")
     else:
-        print("Signature verification failed. The message may be tampered.")
-        return "Bad request", 400
+        print("Signature verification failed")
+        return "Signature verification failed", 400
     message = json.loads(data['message'])
+
+    try:
+        validate_transaction(message, data['public_key'])
+    except Exception as e:
+        print(str(e))
+        return str(e), 400
 
     unconfirmed_transactions[message['txn_id']] = message
     logger.info(
@@ -138,5 +136,6 @@ def load_config():
 
 
 config = load_config()
+cfg_bc = config['blockchain']
 logger.info(f"DSC {config['version']}")
 logger.info("Pool started with 4 worker threads")  # TODO
