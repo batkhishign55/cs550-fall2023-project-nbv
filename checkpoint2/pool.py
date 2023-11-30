@@ -67,9 +67,14 @@ def transaction_status():
 def get_transactions():
     num_transactions = len(unconfirmed_transactions) if int(request.args.get(
         'max_txns')) > len(unconfirmed_transactions) else int(request.args.get('max_txns'))
+    # print(f"Total unconfirmed instances before deletion= {len(unconfirmed_transactions)}")
+
     # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
-    transactions = {key: unconfirmed_transactions[key] for key in list(
-        unconfirmed_transactions)[:num_transactions]}
+    txn_ids = list(unconfirmed_transactions)[:num_transactions]
+    transactions = {txn_id: unconfirmed_transactions[txn_id] for txn_id in txn_ids}
+    for txn_id in txn_ids:
+        del unconfirmed_transactions[txn_id]
+    # print(f"Total unconfirmed instances after deletion = {len(unconfirmed_transactions)}")
     submitted_transactions.update(transactions)
     return {"submitted_txns": submitted_transactions}
 
