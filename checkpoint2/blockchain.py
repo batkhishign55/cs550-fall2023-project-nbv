@@ -33,8 +33,9 @@ class Blockchain:
     def __init__(self):
         self.blocks = []
         self.difficulty_bits = 30
-        self.consecutive_validator_blocks = 0
-        self.consecutive_metronome_blocks = 0
+        self.difficulty_tracker = {'last-block': None, 'counter': 0}
+        # self.consecutive_validator_blocks = 0
+        # self.consecutive_metronome_blocks = 0
 
     def add_block(self, block):
         self.blocks.append(block)
@@ -47,7 +48,7 @@ class Blockchain:
 
     def get_balance(self, wallet, cache_block_height, cache_bal):
         balance = cache_bal
-        for block in self.blocks[cache_block_height+1:]:
+        for block in self.blocks[cache_block_height + 1:]:
             print("searched in a block")
             for txn in block.transactions:
                 if txn.recipient_address == wallet:
@@ -55,23 +56,7 @@ class Blockchain:
                 if txn.sender_address == wallet:
                     balance -= txn.value
 
-        return (balance, len(self.blocks)-1)
-
-    def update_difficulty(self, created_by):
-        if created_by == "validator":
-            self.consecutive_validator_blocks += 1
-        else:
-            self.consecutive_metronome_blocks += 1
-
-        if self.consecutive_metronome_blocks == 4:
-            self.difficulty_bits -= 1
-            self.consecutive_metronome_blocks = 0
-            self.consecutive_validator_blocks = 0
-
-        if self.consecutive_validator_blocks == 8:
-            self.difficulty_bits += 1
-            self.consecutive_metronome_blocks = 0
-            self.consecutive_validator_blocks = 0
+        return (balance, len(self.blocks) - 1)
 
 
 blockchain = Blockchain()
@@ -86,16 +71,19 @@ def hello():
 @app.post('/addblock')
 def addblock():
     block = Block.unpack(request.data)
-    blockchain.add_block(block)
-    received_from = "metronome"
-    if len(block.transactions) != 0:
-        received_from = "validator"
-    print(datetime.datetime.now(
-    ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
-    blockchain.update_difficulty(received_from)
-    url = 'http://{0}:{1}/confirmed_transactions'.format(
-        cfg_pool['server'], cfg_pool['port'])
-    x = requests.post(url, data=block.transactions)
+    if blockchain.get_last_block_hash() == block.prev_block_hash:
+        blockchain.add_block(block)
+        blockchain.difficulty_tracker = {'last-block': block.prev_block_hash, 'counter': 1}
+        url = 'http://{0}:{1}/confirmed_transactions'.format(
+            cfg_pool['server'], cfg_pool['port'])
+        x = requests.post(url, data=block.transactions)
+        received_from = "metronome"
+        if len(block.transactions) != 0:
+            received_from = "validator"
+        print(datetime.datetime.now(
+        ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
+    elif blockchain.difficulty_tracker['last-block'] != block.prev_block_hash:
+        blockchain.difficulty_tracker['counter'] += 1
 
     return {"message": "success"}
 
@@ -149,8 +137,10 @@ def transactions():
 
 @app.get('/difficulty')
 def difficulty():
-    # print(datetime.datetime.now(), " Transactions request for " +
-    #       request.args["ids"] + ", none found")
+    if blockchain.difficulty_tracker['counter'] > 0.75 * validator_instances:
+        blockchain.difficulty_bits += 1
+    elif blockchain.difficulty_tracker['counter'] < 0.25 * validator_instances:
+        blockchain.difficulty_bits -= 1
     return {"difficulty_bits": blockchain.difficulty_bits}
 
 
@@ -177,3 +167,4 @@ print(datetime.datetime.now(), " Blockchain server started with 2 worker threads
 difficulty_bits = 30
 create_genesis_block()
 cfg_pool = config['pool']
+validator_instances = config['validator']['instances']
