@@ -59,16 +59,11 @@ def transaction_status():
 
 @app.post('/get_txn')  # Provides valid transactions to validators
 def get_transactions():
-    num_transactions = request.args.get('max_txns')
-    tx_ids = list(unconfirmed_transactions.keys())
+    num_transactions = len(unconfirmed_transactions) if int(request.args.get('max_txns')) > len(unconfirmed_transactions) else int(request.args.get('max_txns'))
     # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
-    for _ in range(int(num_transactions)):
-        if tx_ids:
-            tx_id = random.choice(tx_ids)
-            tx = unconfirmed_transactions.pop(tx_id)
-            submitted_transactions[tx_id] = tx
+    transactions = {key: unconfirmed_transactions[key] for key in list(unconfirmed_transactions)[:num_transactions]}
+    submitted_transactions.update(transactions)
     return {"submitted_txns": submitted_transactions}
-
 
 def verify_signature(message, signature, public_key_string):
 
