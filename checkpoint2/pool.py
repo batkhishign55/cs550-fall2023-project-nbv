@@ -47,9 +47,8 @@ def cleanup_confirmed_transactions():
     # transactions = request.data
     # tx_ids = list(transactions.keys())
     for transaction in block.transactions:
-        print(transaction)
-        txn = Transaction.unpack(transaction)
-        submitted_transactions.pop(txn.transaction_id)
+        print(transaction.transaction_id)
+        submitted_transactions.pop(transaction.transaction_id)
     return {"Status": "OK"}
 
 
