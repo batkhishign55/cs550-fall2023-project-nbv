@@ -1,11 +1,10 @@
-import hashlib
+
+import json
+import uuid
 import base58
-import time
-import configparser
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
-import os
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
 import datetime
 import random
 
@@ -33,84 +32,88 @@ class Wallet:
         self.public_key = None
         self.private_key = None
         self.balances = {}
-        self.load_wallet()
+        self.load_keys_from_yaml()
 
     def get_current_date_time(self):
         return datetime.datetime.now().strftime("%Y%m%d %H:%M:%S.%f")
 
-    def load_keys_from_config(self):
-        config = configparser.ConfigParser()
-        config.read('dsc_config.yaml')
-        public_key = config['Keys']['public_key']
-        private_key = config['Keys']['private_key']
-        return public_key, private_key
+    def generate_key_pair(self):
+        private_key = ec.generate_private_key(
+            ec.SECP256R1(), default_backend())
+        public_key = private_key.public_key()
+        private_key_bytes = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
 
-    def load_wallet(self):
-        if os.path.exists('dsc_config.yaml'):
-            config = configparser.ConfigParser()
-            config.read('dsc_config.yaml')
-            if 'Keys' in config:
-                self.public_key = config['Keys']['public_key']
-                self.private_key = config['Keys']['private_key']
+        public_key_bytes = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        self.private_key = base58.b58encode(private_key_bytes).decode('utf-8')
+        self.public_key = base58.b58encode(public_key_bytes).decode('utf-8')
+
+    def save_keys_to_yaml(self):
+
+        keys_data = {
+            'private_key': self.private_key,
+            'public_key': self.public_key
+        }
+
+        with open("dsc-key.yaml", 'w') as file:
+            yaml.dump(keys_data, file)
+
+    def convert_to_key_objects(self):
+
+        private_key_bytes = base58.b58decode(self.private_key)
+        public_key_bytes = base58.b58decode(self.public_key)
+        private_key = serialization.load_pem_private_key(
+            private_key_bytes,
+            password=None,
+            backend=default_backend()
+        )
+
+        public_key = serialization.load_pem_public_key(
+            public_key_bytes,
+            backend=default_backend()
+        )
+        return private_key, public_key
+
+    def load_keys_from_yaml(self):
+        with open("dsc-key.yaml", 'r') as file:
+            keys_data = yaml.safe_load(file)
+        self.private_key = keys_data['private_key']
+        self.public_key = keys_data['public_key']
+
+    def sign_message(self, message):
+        private_key, public_key = self.convert_to_key_objects()
+        signature = private_key.sign(
+            message.encode('utf-8'),
+            ec.ECDSA(hashes.SHA256())
+        )
+        return base58.b58encode(signature).decode('utf-8')
+
+    def verify_signature(self, message, signature):
+        try:
+            signature_bytes = base58.b58decode(signature)
+            self.public_key.verify(
+                signature_bytes,
+                message.encode('utf-8'),
+                ec.ECDSA(hashes.SHA256())
+            )
+            return True
+        except Exception:
+            return False
 
     def create_wallet(self):
-        self.load_wallet()
-        public_key = None
-        private_key = None
-        if not os.path.exists('dsc_config.yaml') and not os.path.exists('dsc-key.yaml'):
-            # Use SHA256 to create public/private keys of 256-bit length
-            # Store keys in Base58 encoding
-            # Generate an RSA key pair
-            private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-                backend=default_backend()
-            )
+        # Generate keys
+        self.generate_key_pair()
 
-            # Serialize the public key to store in Base58 encoding
-            public_key_bytes = private_key.public_key().public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
-            )
-
-            # Calculate SHA256 hash of the public key
-            sha256 = hashlib.sha256()
-            sha256.update(public_key_bytes)
-            hashed_public_key = sha256.digest()
-
-            # Encode hashed public key in Base58
-            public_key = base58.b58encode(hashed_public_key)
-
-            # Serialize the private key to store in Base58 encoding
-            private_key_bytes = private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            )
-            private_key = private_key_bytes.decode('utf-8')
-            public_key = public_key.decode('utf-8')
-
-            config = configparser.ConfigParser()
-            config['Keys'] = {
-                'public_key': public_key,
-                'private_key': private_key
-            }
-
-            with open('dsc_config.yaml', 'w') as configfile:
-                config.write(configfile)
-
-            with open('dsc-key.yaml', 'w') as keyfile:
-                keyfile.write(private_key)
-
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} DSC Public Address: {public_key}\n{self.get_current_date_time()} DSC Private Address: {private_key}\n{self.get_current_date_time()} Saved public key to dsc_config.yaml and private key to dsc-key.yaml in local folder")
-        else:
-
-            print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Wallet already exists at dsc-key.yaml, wallet create aborted")
-
-        return public_key, private_key
+        # Save keys to YAML file
+        self.save_keys_to_yaml()
 
     def print_keys(self):
-        self.load_wallet()
         if hasattr(self, 'public_key'):
             print(f"{self.get_current_date_time()} DSC v1.0\n{self.get_current_date_time()} Reading dsc_config.yaml and dsc-key.yaml...\n{self.get_current_date_time()} DSC Public Address: {self.public_key}\n{self.get_current_date_time()} DSC Private Address: {self.private_key}")
 
@@ -127,16 +130,21 @@ class Wallet:
     def send_coins(self, value, recipient):
 
         transaction_id = self.generate_transaction_id()
-        data = {'txn_id': transaction_id, 'sender': self.public_key,
-                'recipient': recipient, 'value': value, 'signature': 'sth', 'timestamp': int(time.time())}
+
+        data = {'txn_id': str(transaction_id), 'sender': self.public_key,
+                'recipient': recipient, 'value': value}
+        message = json.dumps(data, indent=2)
+        # Sign the message with the private key
+        signature = self.sign_message(message)
+
         url = 'http://{0}:{1}/receive_txn'.format(
             cfg_p['server'], cfg_p['port'])
-        print(url, data)
-        res = requests.post(url, json=data)
+        res = requests.post(url, json={
+                            'message': message, 'signature': signature, 'public_key': self.public_key})
 
-        if res.status_code != 200:
-            print(
-                f"{self.get_current_date_time()} Created transaction {transaction_id}, Sending {value} coins to {recipient}")
+        print(
+            f"{self.get_current_date_time()} Created transaction {transaction_id}, Sending {value} coins to {recipient}")
+        if res.status_code == 200:
             print(
                 f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
         else:
@@ -144,33 +152,14 @@ class Wallet:
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
-        return ''.join(random.choices('0123456789ABCDEF', k=16))
+        return uuid.uuid4()
+        # return ''.join(random.choices('0123456789ABCDEF', k=16))
 
-    def check_transaction_status(self, transaction_id):
-        # Simulating contacting the pool server
-        pool_response = self.contact_pool_server(transaction_id)
+    def check_transaction_status(self, txn_id):
 
-        if pool_response == "unknown":
-            # Simulate contacting the blockchain server for transaction status
-            blockchain_response = self.query_blockchain(transaction_id)
-
-            if blockchain_response == "confirmed":
-                print(f"{self.get_current_date_time()} DSC v1.0")
-                print(
-                    f"{self.get_current_date_time()} Transaction {transaction_id} status [confirmed]")
-            else:
-                print(f"{self.get_current_date_time()} DSC v1.0")
-                print(
-                    f"{self.get_current_date_time()} Transaction {transaction_id} status [unknown]")
-        else:
-            print(f"{self.get_current_date_time()} DSC v1.0")
-            print(
-                f"{self.get_current_date_time()} Transaction {transaction_id} status [{pool_response}]")
-
-    def contact_pool_server(self, transaction_id):
-        # Simulate contacting the pool server
-        # Return a random status: submitted, unconfirmed, or unknown
-        return random.choice(["submitted", "unconfirmed", "unknown"])
+        url = 'http://{0}:{1}/transaction_status?txn_id={2}'.format(cfg_p['server'], cfg_p['port'], txn_id)
+        res = requests.get(url)
+        print(res.json())
 
     def query_blockchain(self, transaction_id):
         # Simulate contacting the blockchain server for transaction status

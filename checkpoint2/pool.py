@@ -1,8 +1,15 @@
+import json
 import logging
 import random
+import base58
 
 from flask import Flask, request
 import yaml
+import base58
+import yaml
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -61,13 +68,13 @@ def cleanup_confirmed_transactions():
 
 @app.get('/transaction_status')
 def transaction_status():
-    transaction_id = request.args.get('transaction_id')
+    transaction_id = request.args.get('txn_id')
     if transaction_id in submitted_transactions:
-        return "Submitted"
+        return {"status": "Submitted"}
     elif transaction_id in unconfirmed_transactions:
-        return "Unconfirmed"
+        return {"status": "Unconfirmed"}
     else:
-        return "Unknown"
+        return {"status": "Unknown"}
 
 
 @app.post('/get_txn')  # Provides valid transactions to validators
@@ -83,22 +90,43 @@ def get_transactions():
     return {"submitted_txns": submitted_transactions}
 
 
+def verify_signature(message, signature, public_key_string):
+
+    public_key_bytes = base58.b58decode(public_key_string)
+
+    public_key = serialization.load_pem_public_key(
+        public_key_bytes,
+        backend=default_backend()
+    )
+    try:
+        signature_bytes = base58.b58decode(signature)
+        public_key.verify(
+            signature_bytes,
+            message.encode('utf-8'),
+            ec.ECDSA(hashes.SHA256())
+        )
+        return True
+    except Exception:
+        return False
+
+
 @app.post('/receive_txn')
 def receive_txn():
-    print(request.json)
     data = request.get_json()
-    transaction_object = data.get('transaction_object')
-    # if validate_transaction_data(data):
-    if True:
-        # Store transaction in unconfirmed transactions database
-        unconfirmed_transactions[data['txn_id']] = transaction_object
-        # Print transaction in console
-        logger.info(
-            f"Transaction {data['txn_id']} received from {data['source']}, ACK")
-        return "Accepted"
+    is_verified = verify_signature(
+        data['message'], data['signature'], data['public_key'])
 
+    if is_verified:
+        print("Signature verified. The message is authentic.")
     else:
-        return "Bad Request"
+        print("Signature verification failed. The message may be tampered.")
+        return "Bad request", 400
+    message = json.loads(data['message'])
+
+    unconfirmed_transactions[message['txn_id']] = message
+    logger.info(
+        f"Transaction {message['txn_id']} received from {message['sender']}, ACK")
+    return {"message": "acknowledged"}
 
 
 def load_config():
