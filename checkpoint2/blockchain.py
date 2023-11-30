@@ -79,7 +79,7 @@ def addblock():
     url = 'http://{0}:{1}/confirmed_transactions'.format(
         cfg_pool['server'], cfg_pool['port'])
 
-    x = requests.post(url, data=block.transactions)
+    x = requests.post(url, data=request.data)
     received_from = "metronome"
     if len(block.transactions) != 0:
         received_from = "validator"

@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+import time
 import base58
 
 from flask import Flask, request
@@ -11,6 +12,8 @@ import yaml
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
+
+from block import Block, Transaction
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -37,12 +40,16 @@ def hello():
 
 @app.post('/confirmed_transactions')
 def cleanup_confirmed_transactions():
+
+    block = Block.unpack(request.data)
     # logger.info(f'confirmed transactions clean up in progress')
     # call blockchain's unpack to unpack inputted block and retrieve transactions.
-    transactions = request.data
+    # transactions = request.data
     # tx_ids = list(transactions.keys())
-    for transaction in transactions:
-        submitted_transactions.pop(transaction.transaction_id)
+    for transaction in block.transactions:
+        print(transaction)
+        txn = Transaction.unpack(transaction)
+        submitted_transactions.pop(txn.transaction_id)
     return {"Status": "OK"}
 
 
@@ -59,11 +66,14 @@ def transaction_status():
 
 @app.post('/get_txn')  # Provides valid transactions to validators
 def get_transactions():
-    num_transactions = len(unconfirmed_transactions) if int(request.args.get('max_txns')) > len(unconfirmed_transactions) else int(request.args.get('max_txns'))
+    num_transactions = len(unconfirmed_transactions) if int(request.args.get(
+        'max_txns')) > len(unconfirmed_transactions) else int(request.args.get('max_txns'))
     # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
-    transactions = {key: unconfirmed_transactions[key] for key in list(unconfirmed_transactions)[:num_transactions]}
+    transactions = {key: unconfirmed_transactions[key] for key in list(
+        unconfirmed_transactions)[:num_transactions]}
     submitted_transactions.update(transactions)
     return {"submitted_txns": submitted_transactions}
+
 
 def verify_signature(message, signature, public_key_string):
 
@@ -115,6 +125,9 @@ def receive_txn():
     except Exception as e:
         print(str(e))
         return str(e), 400
+
+    message['timestamp'] = int(time.time())
+    message['signature'] = data['signature']
 
     unconfirmed_transactions[message['txn_id']] = message
     logger.info(
