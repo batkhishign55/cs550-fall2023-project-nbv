@@ -11,7 +11,7 @@ class Transaction:
         self.signature = signature
 
     def pack(self):
-        return struct.pack("<32s32sdq32s32s", 
+        return struct.pack("<256s256sdq32s32s", 
                            self.sender_address.encode('utf-8'), 
                            self.recipient_address.encode('utf-8'), 
                            self.value, 
@@ -21,7 +21,7 @@ class Transaction:
 
     @classmethod
     def unpack(cls, data):
-        unpacked_data = struct.unpack("<32s32sdq32s32s", data)
+        unpacked_data = struct.unpack("<256s256sdq32s32s", data)
         return cls(unpacked_data[0].decode('utf-8').rstrip('\x00'), 
                    unpacked_data[1].decode('utf-8').rstrip('\x00'), 
                    unpacked_data[2], 
@@ -67,7 +67,7 @@ class Block:
         header_size = struct.calcsize("<H32sIqHqI")
         header, _, transactions_data = struct.unpack(f"<{header_size}s64s{len(data)-header_size-64}s", data)
         header_data = struct.unpack("<H32sIqHqI", header)
-        transactions = [Transaction.unpack(transactions_data[i:i+144]) for i in range(0, len(transactions_data), 144)]
+        transactions = [Transaction.unpack(transactions_data[i:i+592]) for i in range(0, len(transactions_data), 592)]
         return cls(header_data[0], 
                    header_data[1].decode('utf-8'), 
                    header_data[2], 
