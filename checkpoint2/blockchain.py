@@ -33,7 +33,7 @@ class Blockchain:
     def __init__(self):
         self.blocks = []
         self.difficulty_bits = 30
-        self.difficulty_tracker = {'last-block': None, 'counter': 0}
+        # self.difficulty_tracker = {'last-block': None, 'counter': 0}
         # self.consecutive_validator_blocks = 0
         # self.consecutive_metronome_blocks = 0
 
@@ -71,19 +71,22 @@ def hello():
 @app.post('/addblock')
 def addblock():
     block = Block.unpack(request.data)
-    if blockchain.get_last_block_hash() == block.prev_block_hash:
-        blockchain.add_block(block)
-        blockchain.difficulty_tracker = {'last-block': block.prev_block_hash, 'counter': 1}
-        url = 'http://{0}:{1}/confirmed_transactions'.format(
-            cfg_pool['server'], cfg_pool['port'])
-        x = requests.post(url, data=block.transactions)
-        received_from = "metronome"
-        if len(block.transactions) != 0:
-            received_from = "validator"
-        print(datetime.datetime.now(
-        ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
-    elif blockchain.difficulty_tracker['last-block'] != block.prev_block_hash:
-        blockchain.difficulty_tracker['counter'] += 1
+    # if blockchain.get_last_block_hash() == block.prev_block_hash:
+    blockchain.add_block(block)
+    blockchain.difficulty_tracker = {'last-block': block.prev_block_hash, 'counter': 1}
+    print(f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
+    print(f"Sending below transactions to cleanup {block.transactions}")
+    url = 'http://{0}:{1}/confirmed_transactions'.format(
+        cfg_pool['server'], cfg_pool['port'])
+
+    x = requests.post(url, data=block.transactions)
+    received_from = "metronome"
+    if len(block.transactions) != 0:
+        received_from = "validator"
+    print(datetime.datetime.now(
+    ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
+    # elif blockchain.difficulty_tracker['last-block'] != block.prev_block_hash:
+    #     blockchain.difficulty_tracker['counter'] += 1
 
     return {"message": "success"}
 
@@ -137,10 +140,10 @@ def transactions():
 
 @app.get('/difficulty')
 def difficulty():
-    if blockchain.difficulty_tracker['counter'] > 0.75 * validator_instances:
-        blockchain.difficulty_bits += 1
-    elif blockchain.difficulty_tracker['counter'] < 0.25 * validator_instances:
-        blockchain.difficulty_bits -= 1
+    # if blockchain.difficulty_tracker['counter'] > 0.75 * validator_instances:
+    #     blockchain.difficulty_bits += 1
+    # elif blockchain.difficulty_tracker['counter'] < 0.25 * validator_instances:
+    #     blockchain.difficulty_bits -= 1
     return {"difficulty_bits": blockchain.difficulty_bits}
 
 

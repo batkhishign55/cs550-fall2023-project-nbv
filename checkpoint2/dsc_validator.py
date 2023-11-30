@@ -14,6 +14,7 @@ from bintrees import FastRBTree
 
 import config_validator
 from block import Block
+from block import Transaction
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -208,10 +209,20 @@ def init_validator():
     if len(cache) == 0:
         url = 'http://{0}:{1}/get_txn?max_txns=8191'.format(cfg_pool['server'], cfg_pool['port'])
         response = requests.post(url)
-        for transaction in response.json()['submitted_txns']:
-            # TODO check if transaction is valid.
-            cache.append(transaction) # TODO - check this part. transactions should be added in array in block.
-
+        # print(f"\n\n\n {response.json()}\n\n\n")
+        transactions = response.json()['submitted_txns']
+        # print(transactions)
+        for key in transactions:
+            transaction = transactions[key]
+            # print(transaction)
+            # # TODO check if transaction is valid.
+            # print("Transactions : ")
+            # print(transaction['sender'], transaction['recipient'], transaction['value'],
+            #                   transaction['timestamp'], transaction['txn_id'], transaction['signature'])
+            txn = Transaction(transaction['sender'], transaction['recipient'], transaction['value'],
+                              transaction['timestamp'], transaction['txn_id'], transaction['signature'])
+            cache.append(txn) # TODO - check this part. transactions should be added in array in block.
+        # print(f"\n\n cache elist is {cache}")
     # get last block hash
     lastblock_url = 'http://{0}:{1}/lastblock'.format(cfg_bc['server'], cfg_bc['port'])
     last_block = requests.get(lastblock_url)
@@ -228,7 +239,7 @@ def init_validator():
     logger.info(f'{last_block.json()["block"]}, NONCE {nonce} ({speed:.2f} H/S)')
     if nonce != -1:
         block = Block(version=1, prev_block_hash=last_block.json()['block'], block_id=random.randint(0, 2 ** 32 - 1),
-                      timestamp=int(time.time()), difficulty_target=difficulty_bits, nonce=nonce, transactions=[])
+                      timestamp=int(time.time()), difficulty_target=difficulty_bits, nonce=nonce, transactions=cache)
 
         # Serialize and Deserialize Block
         serialized_block = block.pack()
@@ -310,4 +321,3 @@ def init():
             time.sleep(6 - elapsed_time)
 
     # init_validator()
-
