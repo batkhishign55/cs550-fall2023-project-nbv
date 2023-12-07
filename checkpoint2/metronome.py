@@ -1,11 +1,17 @@
+import datetime
+import json
 import logging
 import time
+import datetime
+from urllib import request
+
 import requests
 import yaml
-from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
-from block import Block, Transaction
+from flask import Flask, request
+
 import config_validator
+from block import Block
 
 # Set up the logger
 logger = logging.getLogger(__name__)
@@ -59,6 +65,32 @@ def block_ack():
     ack_received = True
     logger.info('Received an ACK from validator upon block creation')
     return {'received': 'OK'}
+
+
+@app.route('/register_validator', methods=['POST'])
+def register_validator():
+    validator_ip = request.json.get('validator_ip')
+    validator_port = request.json.get('validator_port')
+
+    if not all([validator_ip, validator_port]):
+        return {'error': 'Incomplete validator details'}, 400
+
+    if validator_ip in registered_validators:
+        return {'error': 'Validator already registered'}, 400
+
+    registered_validators[validator_ip] = {
+        'validator_ip': validator_ip,
+        'validator_port': validator_port,
+        'subscribed_on': datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+    }
+
+    return {'message': 'Validator registered successfully'}, 200
+
+
+@app.route('/registered_validators')
+def get_registered_validators():
+    return json.dumps(registered_validators, indent=4)
+
 
 @app.route('/nonce')
 def nonce():
@@ -125,5 +157,8 @@ def watcher():
     if not ack_received:
         create_block()
 
+
 scheduler.add_job(watcher, 'interval', seconds=7)
 scheduler.start()
+
+registered_validators = {}
