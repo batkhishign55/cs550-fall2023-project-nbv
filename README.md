@@ -20,3 +20,40 @@ The study's findings reveal the robustness of the implemented DSC blockchain inf
 
 ![Screenshot 2023-12-07 at 2 00 06 AM](https://github.com/datasys-classrooms/cs550-fall2023-project-nbv/assets/145067050/462ade9a-f164-49a1-84e1-075b513bfbbd)
 
+**Scripts**
+```
+./dsc wallet help
+```
+```
+./dsc wallet create
+```
+```
+./dsc wallet key
+```
+```
+./dsc wallet balance
+```
+```
+./dsc wallet send <coins> <address>
+```
+```
+./dsc wallet transaction <transaction_id>
+```
+```
+./dsc wallet transactions
+```
+```
+./dsc blockchain
+```
+```
+./dsc pool
+```
+```
+./dsc metronome
+```
+```
+./dsc validator help
+```
+```
+./dsc validator
+```
