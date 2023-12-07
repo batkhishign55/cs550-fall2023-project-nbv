@@ -1,16 +1,49 @@
 import requests
 import json
-
-
+from flask import Flask, request
+import config_validator
+import yaml
 
 num_submitted_transactions =0
 num_unconfirmed_transactions =0
 
+
+template = {
+    'version': str,
+    'monitor': {
+        'server': str,
+        'port': int,
+        'threads': int
+    }
+}
+validator_config, err = config_validator.get_validated_fields(
+    'dsc-config.yaml', template)
+if not validator_config:
+    logger.error(err)
+    exit(1)
+
+app_info = f"DSC {validator_config['version']}"
+app = Flask(__name__)
+
+
+def load_config():
+    with open("dsc-config.yaml", "r") as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+
+config = load_config()
+cfg_bc = config['blockchain']
+cfg_p = config['pool']
+cfg_m = config['metronome']
+
 class Monitor:
     def __init__(self):
         self.blockchain_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
-        self.pool_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
-        self.metronome_url = 'http://{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])
+        self.pool_url = 'http://{0}:{1}'.format(cfg_p['server'], cfg_p['port'])
+        self.metronome_url = 'http://{0}:{1}'.format(cfg_m['server'], cfg_m['port'])
 
     def get_blockchain_stats(self):
         try:
