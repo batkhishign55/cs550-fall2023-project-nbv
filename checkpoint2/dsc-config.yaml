@@ -13,6 +13,10 @@ metronome:
   server: 127.0.0.1
   port: 10003
   threads: 2
+monitor:
+  server: 127.0.0.1
+  port: 10004
+  threads: 2
 validator:
   instances: 1
   fingerprint: e6a75580-a7d3-4bee-9d21-f289a45bd36b

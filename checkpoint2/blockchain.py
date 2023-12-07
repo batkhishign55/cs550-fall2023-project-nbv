@@ -32,6 +32,8 @@ class Cache:
 class Blockchain:
     def __init__(self):
         self.blocks = []
+        self.wallets = set()
+        self.total_coins = 0
         self.difficulty_bits = 30
         # self.difficulty_tracker = {'last-block': None, 'counter': 0}
         # self.consecutive_validator_blocks = 0
@@ -55,8 +57,16 @@ class Blockchain:
                     balance += txn.value
                 if txn.sender_address == wallet:
                     balance -= txn.value
-
+                    
         return (balance, len(self.blocks) - 1)
+
+    def get_statistics(self):
+        last_block_header = self.get_last_block()
+        unique_wallets = len(self.wallets)
+        total_coins = self.total_coins
+        return {"last_block_header": last_block_header, "unique_wallet_addresses": unique_wallets, "total_coins": total_coins}
+
+        
 
 
 blockchain = Blockchain()
@@ -67,6 +77,9 @@ cache = Cache()
 def hello():
     return 'Blockchain'
 
+@app.route('/get_statistics')
+def get_statistic():
+    return {"response": Blockchain().get_statistic()}
 
 @app.post('/addblock')
 def addblock():

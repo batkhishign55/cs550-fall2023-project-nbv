@@ -11,6 +11,7 @@ app = Flask(__name__)
 class Block:
     def __init__(self, data):
         self.data = data
+        
 
     def get_data(self):
         return self.data
@@ -30,10 +31,13 @@ class Blockchain:
 
     def get_block_length(self):
         return len(self.blocks)
-
+        
     def get_last_block(self):
         return self.blocks[-1].get_data()
 
+    
+
+    
 
 @app.route('/')
 def hello():

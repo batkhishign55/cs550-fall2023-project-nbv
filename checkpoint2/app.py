@@ -34,7 +34,9 @@ def handle_input(inp):
     elif inp == "./dsc validator":
         dsc_validator.init()
     elif inp == "./dsc monitor":
-        print("this is monitor")
+        cfg_mo = config['monitor']
+        subprocess.Popen(['gunicorn', 'monitor:app', '-b',
+                         '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
     elif inp == "./dsc wallet help":
         wallet.print_help()
     elif inp == "./dsc wallet create":
