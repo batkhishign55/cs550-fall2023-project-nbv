@@ -34,7 +34,7 @@ class Blockchain:
         self.blocks = []
         self.wallets = set()
         self.total_coins = 0
-        self.difficulty_bits = 10
+        self.difficulty_bits = 30
         # self.difficulty_tracker = {'last-block': None, 'counter': 0}
         # self.last_to_last_hash = None
         # self.consecutive_validator_blocks = 0
@@ -58,16 +58,31 @@ class Blockchain:
                     balance += txn.value
                 if txn.sender_address == wallet:
                     balance -= txn.value
-                    
+
         return (balance, len(self.blocks) - 1)
+
+    def get_txn(self, txn_id):
+        for block in self.blocks:
+            for txn in block.transactions:
+                if txn.transaction_id == txn_id:
+                    return True
+
+        return False
+
+    def get_txns(self, txn_ids):
+        res = []
+        for block in self.blocks:
+            for txn in block.transactions:
+                if txn.transaction_id in txn_ids:
+                    res.append({"txn_id": txn.transaction_id, "confirmed_timestamp":txn.timestamp})
+
+        return res
 
     def get_statistics(self):
         last_block_header = self.get_last_block()
         unique_wallets = len(self.wallets)
         total_coins = self.total_coins
         return {"last_block_header": last_block_header, "unique_wallet_addresses": unique_wallets, "total_coins": total_coins}
-
-        
 
 
 blockchain = Blockchain()
@@ -78,23 +93,27 @@ cache = Cache()
 def hello():
     return 'Blockchain'
 
+
 @app.route('/get_statistics')
 def get_statistic():
     return {"response": Blockchain().get_statistic()}
+
 
 @app.post('/addblock')
 def addblock():
     block = Block.unpack(request.data)
     if block.prev_block_hash in blockchain.get_last_block_hash():
         blockchain.add_block(block)
-        print(f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
+        print(
+            f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
 
         received_from = "metronome"
         if len(block.transactions) != 0:
             received_from = "validator"
-        
+
         if received_from == "validator":
-            print(f"Sending below transactions to cleanup {block.transactions}")
+            print(
+                f"Sending below transactions to cleanup {block.transactions}")
             url = 'http://{0}:{1}/confirmed_transactions'.format(
                 cfg_pool['server'], cfg_pool['port'])
 
@@ -140,17 +159,20 @@ def get_cache():
 # curl "localhost:10002/txn?id=some-txn-id"
 @app.get('/txn')
 def transaction():
-    print(datetime.datetime.now(), " Transaction request status for " +
-          request.args["id"] + ", unkhown")
-    return "unknown"
+    found = blockchain.get_txn(request.args["id"])
+    if found:
+        return {"status": "Confirmed"}
+    else:
+        return {"status": "Unknown"}
 
 
 # curl "localhost:10002/txns?ids=id1,id2,id3"
 @app.get('/txns')
 def transactions():
-    print(datetime.datetime.now(), " Transactions request for " +
-          request.args["ids"] + ", none found")
-    return "none found"
+    txns = request.args["ids"].split(",")
+    res = blockchain.get_txns(txns)
+
+    return {"Confirmed": res}
 
 
 @app.get('/difficulty')
@@ -171,7 +193,7 @@ def load_config():
 
 
 def create_genesis_block():
-    transaction1 = Transaction(sender_address="", recipient_address="Hje7meKmLgEAZBBTSRP9ZQmnwhPuL7N4G5kFq52qu6mt", value=1000, timestamp=int(
+    transaction1 = Transaction(sender_address="", recipient_address="FakExW58jA2bgxzrzyLQqgBd6x5uKCkSquHwJVMHTRnyNVdfHPhm1hpbVoyb1ggqFMuAegB8Z3WCY1jtfTwECnfhRGqnaXmoFpbNtQqAnwzv6Tz8ApyCsPioZuQus6DkDp3i2KBhMEmAi1LcjzLApiinmNqdXYWFC5hiKtqbGjarpom995Y8cseQHtFP5UdnCw3g3k1m7qxFmAvJBxSYgxVd3gH1ib6gk5dSsDnNQ73EkqhhVYM", value=10000, timestamp=int(
         time.time()), transaction_id="ID1", signature="Signature1")
     block = Block(version=2, prev_block_hash="0", block_id=0, timestamp=int(
         time.time()), difficulty_target=30, nonce=123456, transactions=[transaction1])

@@ -148,6 +148,7 @@ class Wallet:
                 f"{self.get_current_date_time()} Transaction {transaction_id} submitted to pool")
         else:
             print(f"{res.status_code} {res.text}")
+        return str(transaction_id)
 
     def generate_transaction_id(self):
         # Generate a random transaction ID
@@ -158,34 +159,24 @@ class Wallet:
         url = 'http://{0}:{1}/transaction_status?txn_id={2}'.format(
             cfg_p['server'], cfg_p['port'], txn_id)
         res = requests.get(url)
+
+        if res.json()["status"] == "Unknown":
+            url = 'http://{0}:{1}/txn?id={2}'.format(
+                cfg_bc['server'], cfg_bc['port'], txn_id)
+            res = requests.get(url)
         print(res.json())
 
-    def query_blockchain(self, transaction_id):
-        # Simulate contacting the blockchain server for transaction status
-        # Return a random status: confirmed or unknown
-        return random.choice(["confirmed", "unknown"])
+    def transactions(self, txn_ids):
+        url = 'http://{0}:{1}/transactions_status?txn_ids={2}'.format(
+            cfg_p['server'], cfg_p['port'], txn_ids)
+        res = requests.get(url)
+        pool_res = res.json()
+        unknown = pool_res["Unknown"]
 
-    def transactions(self):
-        # TODO
-        # Simulating transactions data (Replace this with actual data retrieval)
-        transactions_data = [
-            {
-                "id": "41VYNQ3dy1dZ4vKrC1vkUT4TgjcDyaEa72yVsik2SnGZ",
-                "status": "confirmed",
-                "timestamp": "20231110 13:05:00.101",
-                "coin": 1.0,
-                "source": "8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U",
-                "destination": "HtBTNpCt5fmPrvESqVp1UFsiX5wnMCtmgt7Cxi85MFiF"
-            },
-
-        ]
-
-        print(f"{self.get_current_date_time()} DSC v1.0")
-
-        for idx, txn in enumerate(transactions_data, start=1):
-            print(f"{self.get_current_date_time()} Transaction #{idx}: id={txn['id']}, status={txn['status']}, "
-                  f"timestamp=\"{txn['timestamp']}\", coin={txn['coin']}, "
-                  f"source={txn['source']}, destination={txn['destination']}")
+        url = 'http://{0}:{1}/txns?ids={2}'.format(
+            cfg_bc['server'], cfg_bc['port'], ",".join(unknown))
+        res = requests.get(url)
+        return {"Unconfirmed": pool_res["Unconfirmed"], "Submitted": pool_res["Submitted"], "Confirmed": res.json()["Confirmed"]}
 
     def print_help(self):
         print(app_info+"\nHelp menu for Wallet, supported commands:\n./dsc wallet help\n./dsc wallet create\n./dsc wallet key\n./dsc wallet balance\n./dsc wallet send <amount> <address>\n./dsc wallet transaction <ID>\n./dsc wallet transactions\n")

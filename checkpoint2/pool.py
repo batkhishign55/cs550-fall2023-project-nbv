@@ -63,16 +63,33 @@ def transaction_status():
         return {"status": "Unknown"}
 
 
+@app.get('/transactions_status')
+def transactions_status():
+    unconfirmed = []
+    submitted = []
+    unknown = []
+    txn_ids = request.args['txn_ids']
+    for txn_id in txn_ids.split(","):
+        if txn_id in submitted_transactions:
+            unconfirmed.append(txn_id)
+        elif txn_id in unconfirmed_transactions:
+            submitted.append(txn_id)
+        else:
+            unknown.append(txn_id)
+    return {"Unconfirmed": unconfirmed, "Submitted": submitted, "Unknown": unknown}
+
+
 @app.post('/get_txn')  # Provides valid transactions to validators
 def get_transactions():
-    if len(submitted_transactions)==0:
+    if len(submitted_transactions) == 0:
         num_transactions = len(unconfirmed_transactions) if int(request.args.get(
             'max_txns')) > len(unconfirmed_transactions) else int(request.args.get('max_txns'))
         # print(f"Total unconfirmed instances before deletion= {len(unconfirmed_transactions)}")
 
         # Add only if it is valid transaction - Todo call blockchain's method before adding in submitted transactions.
         txn_ids = list(unconfirmed_transactions)[:num_transactions]
-        transactions = {txn_id: unconfirmed_transactions[txn_id] for txn_id in txn_ids}
+        transactions = {
+            txn_id: unconfirmed_transactions[txn_id] for txn_id in txn_ids}
         for txn_id in txn_ids:
             del unconfirmed_transactions[txn_id]
         # print(f"Total unconfirmed instances after deletion = {len(unconfirmed_transactions)}")
@@ -139,6 +156,7 @@ def receive_txn():
     logger.info(
         f"Transaction {message['txn_id']} received from {message['sender']}, ACK")
     return {"message": "acknowledged"}
+
 
 @app.route('/transactions_statistics')
 def get_transactions_statistics():
