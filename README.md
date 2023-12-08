@@ -57,3 +57,5 @@ The study's findings reveal the robustness of the implemented DSC blockchain inf
 ```
 ./dsc validator
 ```
+
+Final report: ```https://www.overleaf.com/read/wtgxcbdjdhsw#92bde1```
