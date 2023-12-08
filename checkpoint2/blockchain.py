@@ -88,14 +88,17 @@ def addblock():
     if block.prev_block_hash in blockchain.get_last_block_hash():
         blockchain.add_block(block)
         print(f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
-        print(f"Sending below transactions to cleanup {block.transactions}")
-        url = 'http://{0}:{1}/confirmed_transactions'.format(
-            cfg_pool['server'], cfg_pool['port'])
 
-        x = requests.post(url, data=request.data)
         received_from = "metronome"
         if len(block.transactions) != 0:
             received_from = "validator"
+        
+        if received_from == "validator":
+            print(f"Sending below transactions to cleanup {block.transactions}")
+            url = 'http://{0}:{1}/confirmed_transactions'.format(
+                cfg_pool['server'], cfg_pool['port'])
+
+            x = requests.post(url, data=request.data)
         print(datetime.datetime.now(
         ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
     # elif blockchain.last_to_last_hash == block.prev_block_hash:

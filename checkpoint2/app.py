@@ -20,23 +20,23 @@ def handle_input(inp):
     elif inp == "./dsc blockchain":
         cfg_bc = config['blockchain']
         subprocess.Popen(['gunicorn', 'blockchain:app', '-b',
-                         '{0}:{1}'.format(cfg_bc['server'], cfg_bc['port'])])
+                         '{0}:{1}'.format('0.0.0.0', cfg_bc['port'])])
     elif inp == "./dsc pool key":
         print("this is pool key")
     elif inp == "./dsc pool":
         cfg_p = config['pool']
         subprocess.Popen(['gunicorn', 'pool:app', '-b',
-                         '{0}:{1}'.format(cfg_p['server'], cfg_p['port'])])
+                         '{0}:{1}'.format("0.0.0.0", cfg_p['port'])])
     elif inp == "./dsc metronome":
         cfg_m = config['metronome']
         subprocess.Popen(['gunicorn', 'metronome:app', '-b',
-                         '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
+                         '{0}:{1}'.format("0.0.0.0", cfg_m['port'])])
     elif inp == "./dsc validator":
         dsc_validator.init()
     elif inp == "./dsc monitor":
         cfg_mo = config['monitor']
         subprocess.Popen(['gunicorn', 'monitor:app', '-b',
-                         '{0}:{1}'.format(cfg_m['server'], cfg_m['port'])])
+                         '{0}:{1}'.format("0.0.0.0", cfg_m['port'])])
     elif inp == "./dsc wallet help":
         wallet.print_help()
     elif inp == "./dsc wallet create":
