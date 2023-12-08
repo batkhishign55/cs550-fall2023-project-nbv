@@ -2,19 +2,19 @@ version: 2.0
 wallet:
   public_key: 8cxiskBh2AJSNefWKPQ7ErfmLoM4hs4esGq8REu63C3U
 pool:
-  server: 0.0.0.0
+  server: 10.220.81.44
   port: 10001
   threads: 2
 blockchain:
-  server: 0.0.0.0
+  server: 10.220.81.220
   port: 10002
   threads: 2
 metronome:
-  server: 0.0.0.0
+  server: 10.220.81.88
   port: 10003
   threads: 2
 monitor:
-  server: 0.0.0.0
+  server: 10.220.81.14
   port: 10004
   threads: 2
 validator:
