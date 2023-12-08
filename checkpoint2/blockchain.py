@@ -34,8 +34,9 @@ class Blockchain:
         self.blocks = []
         self.wallets = set()
         self.total_coins = 0
-        self.difficulty_bits = 30
+        self.difficulty_bits = 10
         # self.difficulty_tracker = {'last-block': None, 'counter': 0}
+        # self.last_to_last_hash = None
         # self.consecutive_validator_blocks = 0
         # self.consecutive_metronome_blocks = 0
 
@@ -84,23 +85,21 @@ def get_statistic():
 @app.post('/addblock')
 def addblock():
     block = Block.unpack(request.data)
-    # if blockchain.get_last_block_hash() == block.prev_block_hash:
-    blockchain.add_block(block)
-    blockchain.difficulty_tracker = {'last-block': block.prev_block_hash, 'counter': 1}
-    print(f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
-    print(f"Sending below transactions to cleanup {block.transactions}")
-    url = 'http://{0}:{1}/confirmed_transactions'.format(
-        cfg_pool['server'], cfg_pool['port'])
+    if block.prev_block_hash in blockchain.get_last_block_hash():
+        blockchain.add_block(block)
+        print(f"The block is {block.block_id, block.nonce, block.timestamp, block.transactions}")
+        print(f"Sending below transactions to cleanup {block.transactions}")
+        url = 'http://{0}:{1}/confirmed_transactions'.format(
+            cfg_pool['server'], cfg_pool['port'])
 
-    x = requests.post(url, data=request.data)
-    received_from = "metronome"
-    if len(block.transactions) != 0:
-        received_from = "validator"
-    print(datetime.datetime.now(
-    ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
-    # elif blockchain.difficulty_tracker['last-block'] != block.prev_block_hash:
+        x = requests.post(url, data=request.data)
+        received_from = "metronome"
+        if len(block.transactions) != 0:
+            received_from = "validator"
+        print(datetime.datetime.now(
+        ), f" New block received from {received_from}, Block hash {block.calculate_hash()}")
+    # elif blockchain.last_to_last_hash == block.prev_block_hash:
     #     blockchain.difficulty_tracker['counter'] += 1
-
     return {"message": "success"}
 
 

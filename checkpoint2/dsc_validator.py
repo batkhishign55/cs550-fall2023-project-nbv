@@ -170,14 +170,14 @@ def pom_lookup(hash_lookup, diff, hash_input=None):
 
 
 # PoW lookup - validate hash_lookup match with hash_input, increment NONCE by 1 when match not found. Time limit - 6 seconds. 
-def pow_lookup( hash_lookup, diff, hash_input):
-
+def pow_lookup(hash_lookup, diff, hash_input):
     start_time = time.time()
     hash_count = 0
     nonce = -1
     timeout = 5
     while (time.time() - start_time) < timeout:
-        data = hash_input_struct.pack(hash_input['fingerprint'], hash_input['public_key'], hash_input['NONCE'])
+        nonce_bytes = hash_input['NONCE'].to_bytes(8, byteorder='big')
+        data = struct.Struct('16s 32s 8s').pack(hash_input['fingerprint'], hash_input['public_key'], nonce_bytes)
         hash_output = blake3_hash(data)
         hash_count += 1
         prefix_hash_output = hash_output[:diff // 5]
@@ -188,7 +188,7 @@ def pow_lookup( hash_lookup, diff, hash_input):
 
             break
         else:
-            hash_input['NONCE'] += 1
+            hash_input['NONCE'] = random.randint(0, 2 ** 64 - 1)
 
     end_time = time.time()
     # while (time.time() - start_time) < timeout:
@@ -226,26 +226,44 @@ def init_validator():
     hash_input = {
         'fingerprint': fingerprint,
         'public_key': public_key,
-        'NONCE': 0
+        'NONCE': random.randint(0, 2 ** 64 - 1)
     }
     logger.info(f"diff {difficulty_bits}, hash {last_block.json()['block']}")
     nonce, speed = consensus(last_block.json(), difficulty_bits, hash_input)
     logger.info(f'{last_block.json()["block"]}, NONCE {nonce} ({speed:.2f} H/S)')
     if nonce != -1:
-        transactions = get_transactions()
-        block = Block(version=1, prev_block_hash=last_block.json()['block'], block_id=random.randint(0, 2 ** 32 - 1),
-                      timestamp=int(time.time()), difficulty_target=difficulty_bits, nonce=nonce, transactions=transactions)
+        try:
+            transactions = get_transactions()
+            block = Block(version=1, prev_block_hash=last_block.json()['block'], block_id=random.randint(0, 2 ** 32 - 1),
+                          timestamp=int(time.time()), difficulty_target=difficulty_bits, nonce=nonce,
+                          transactions=transactions)
+            # Serialize and Deserialize Block
+            serialized_block = block.pack()
+            send_to_blockchain(serialized_block)
 
-        # Serialize and Deserialize Block
-        serialized_block = block.pack()
-
-        send_to_blockchain(serialized_block)
-        logger.info(
-            f"New block created, hash {block.calculate_hash()} sent to blockchain")
-        ack_url = 'http://{0}:{1}/block/ack'.format(cfg_metronome['server'], cfg_metronome['port'])
-        requests.get(ack_url)
+            logger.info(
+                f"New block created, hash {block.calculate_hash()} sent to blockchain")
+            ack_url = 'http://{0}:{1}/block/ack'.format(cfg_metronome['server'], cfg_metronome['port'])
+            requests.get(ack_url)
+        except:
+            logger.error("Unexpected error creating a block.")
     else:
         logger.info("Could not find a nonce")
+
+
+def run_thread():
+    global thread_running
+    if not thread_running:
+        thread_running = True
+        my_thread = threading.Thread(target=init_validator())
+        my_thread.start()
+        my_thread.join()
+        thread_running = False
+    # Schedule the next run after 6 seconds
+    threading.Timer(6, run_thread).start()
+
+
+thread_running = False
 
 
 def init():
@@ -254,12 +272,6 @@ def init():
     if not validator_config:
         logger.error(err)
         exit(1)
-
-    # Log an info message
-    logger.info(f'DSC {validator_config["version"]}')
-    global fingerprint, public_key
-    fingerprint = (validator_config['validator']['fingerprint'].encode('utf-8')).ljust(16, b'\0')
-    public_key = (validator_config['validator']['public_key'].encode('utf-8')).ljust(32, b'\0')
 
     def load_config():
         with open("dsc-config.yaml", "r") as stream:
@@ -274,6 +286,13 @@ def init():
 
     cfg_metronome = config['metronome']
     cfg_bc = config['blockchain']
+
+    # Log an info message
+    logger.info(f'DSC {validator_config["version"]}')
+    global fingerprint, public_key
+    fingerprint = (validator_config['validator']['fingerprint'].encode('utf-8')).ljust(16, b'\0')
+    public_key = (validator_config['validator']['public_key'].encode('utf-8')).ljust(32, b'\0')
+
     consensus = None
     if validator_config['validator']['proof_pow']['enable']:
         thread_config = validator_config["validator"]["proof_pow"]["threads_hash"]
@@ -301,17 +320,6 @@ def init():
     # display_help()
     # app.run(debug=True)
 
-    while True:
-        start_time = time.time()
-
-        validation_thread = threading.Thread(target=init_validator())
-        validation_thread.start()
-        validation_thread.join(timeout=6)  # Timeout after 6 seconds
-
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-
-        if elapsed_time < 6:
-            time.sleep(6 - elapsed_time)
+    run_thread()
 
     # init_validator()

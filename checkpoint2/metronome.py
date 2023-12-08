@@ -1,8 +1,6 @@
 import datetime
-import json
 import logging
 import time
-import datetime
 from urllib import request
 
 import requests
@@ -69,18 +67,13 @@ def block_ack():
 
 @app.route('/register_validator', methods=['POST'])
 def register_validator():
-    validator_ip = request.json.get('validator_ip')
-    validator_port = request.json.get('validator_port')
-
-    if not all([validator_ip, validator_port]):
-        return {'error': 'Incomplete validator details'}, 400
-
+    validator_ip = request.remote_addr
     if validator_ip in registered_validators:
         return {'error': 'Validator already registered'}, 400
 
     registered_validators[validator_ip] = {
         'validator_ip': validator_ip,
-        'validator_port': validator_port,
+        'validator_port': 10005,
         'subscribed_on': datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
     }
 
@@ -89,7 +82,14 @@ def register_validator():
 
 @app.route('/registered_validators')
 def get_registered_validators():
-    return json.dumps(registered_validators, indent=4)
+    total_validators = len(registered_validators)
+
+    # Create the JSON response
+    response = {
+        'total_validators': total_validators,
+        'validators': registered_validators
+    }
+    return response
 
 
 @app.route('/nonce')
